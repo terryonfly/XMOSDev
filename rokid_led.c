@@ -408,7 +408,7 @@ int led_dev_codec_i2c_read(struct led_dev *led_d, unsigned char device_addr, uns
     if (led_d->i2c_data[read_actual - 2] != 0x82) return ROKID_LED_ERROR_READ_FAILED;
     if (led_d->i2c_data[read_actual - 1] != 0x82) return ROKID_LED_ERROR_READ_FAILED;
     if (led_d->i2c_data[2] != 0x80) return ROKID_LED_ERROR_READ_FAILED;
-    if (led_d->i2c_data[3] != 0x01) return ROKID_LED_ERROR_READ_FAILED;// order
+    if (led_d->i2c_data[3] != 0x02) return ROKID_LED_ERROR_READ_FAILED;// order
     if (led_d->i2c_data[4] != 0x80) return ROKID_LED_ERROR_READ_FAILED;
     if (led_d->i2c_data[5] != 0x01) return ROKID_LED_ERROR_READ_FAILED;// ack or nack
     int readed_i = 0;
