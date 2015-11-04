@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 		unsigned char i2c_t_dat[2] = {0x10, 0x07};
 		r = led_dev_codec_i2c_write(led_dd, 0x6c, i2c_t_dat, 2, 1);
 		//printf("strlen one_frame r = %d, %d, %d\n", r, j, d);
-		usleep(500*1000);
+		usleep(50*1000);
 	}
 
 	return 0;
