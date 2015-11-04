@@ -10,6 +10,22 @@ struct led_dev *led_dd;
 
 int running = 1;
 
+void test_i2c_read_reg() {
+	int r;
+	char test_dev_addr = 0x6c;
+	char test_reg_addr = 0x10;
+	unsigned char test_val;
+	r = led_dev_codec_i2c_read_reg(led_dd, test_dev_addr, test_reg_addr, &test_val);
+}
+
+void test_i2c_write_reg() {
+	int r;
+	char test_dev_addr = 0x6c;
+	char test_reg_addr = 0x10;
+	char test_val = 0x07;
+	r = led_dev_codec_i2c_write_reg(led_dd, test_dev_addr, test_reg_addr, test_val);
+}
+
 void test_i2c_read() {
 	int r;
 	char test_dev_addr = 0x6c;
@@ -25,10 +41,11 @@ void test_i2c_write() {
 	char test_dev_addr = 0x6c;
 	char test_reg_addr = 0x10;
 	char test_val = 0x07;
-	int test_send_stop_bit = 0;
+	int test_send_stop_bit = 1;
 	int test_i2c_len = 2;
 	unsigned char test_i2c_dat[2] = {test_reg_addr, test_val};
-	r = led_dev_codec_i2c_write(led_dd, test_dev_addr, test_i2c_dat, test_i2c_len, test_send_stop_bit);
+	int test_wrote_len;
+	r = led_dev_codec_i2c_write(led_dd, test_dev_addr, test_i2c_dat, test_i2c_len, test_send_stop_bit, test_wrote_len);
 }
 
 void cs(int n)

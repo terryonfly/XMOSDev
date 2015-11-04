@@ -36,12 +36,37 @@ void led_dev_close(struct led_dev *led_d);
 int led_dev_startup(struct led_dev *led_d);
 */
 
-int led_dev_flush_frame(struct led_dev *led_d, unsigned char *data, int data_len);
+int led_dev_flush_frame(struct led_dev *led_d,
+						unsigned char *data,
+						int data_len);
 
-int led_dev_read(struct led_dev *led_d, unsigned char *data, int data_len, int *actual);
+int led_dev_read(struct led_dev *led_d,
+				 unsigned char *data,
+				 int data_len,
+				 int *actual);
 
-int led_dev_codec_i2c_write(struct led_dev *led_d, unsigned char device_addr, unsigned char *data, int data_len, int send_stop_bit);
+int led_dev_codec_i2c_write(struct led_dev *led_d,
+							unsigned char device_addr,
+							unsigned char *data,
+							int data_len,
+							int send_stop_bit,
+							int *wrote_len);
 
-int led_dev_codec_i2c_read(struct led_dev *led_d, unsigned char device_addr, unsigned char data_len, int send_stop_bit, unsigned char *readed_data, int *readed_len);
+int led_dev_codec_i2c_read(struct led_dev *led_d,
+						   unsigned char device_addr,
+						   unsigned char data_len,
+						   int send_stop_bit,
+						   unsigned char *readed_data,
+						   int *readed_len);
+
+int led_dev_codec_i2c_write_reg(struct led_dev *led_d,
+								unsigned char device_addr,
+								unsigned char reg,
+								unsigned char data);
+
+int led_dev_codec_i2c_read_reg(struct led_dev *led_d,
+							   unsigned char device_addr,
+							   unsigned char reg_addr,
+							   unsigned char *data);
 
 #endif
