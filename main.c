@@ -45,7 +45,7 @@ void test_i2c_write() {
 	int test_i2c_len = 2;
 	unsigned char test_i2c_dat[2] = {test_reg_addr, test_val};
 	int test_wrote_len;
-	r = led_dev_codec_i2c_write(led_dd, test_dev_addr, test_i2c_dat, test_i2c_len, test_send_stop_bit, test_wrote_len);
+	r = led_dev_codec_i2c_write(led_dd, test_dev_addr, test_i2c_dat, test_i2c_len, test_send_stop_bit, &test_wrote_len);
 }
 
 void cs(int n)
@@ -103,8 +103,7 @@ int main(int argc, char **argv)
 		r = led_dev_flush_frame(led_dd, one_frame, LED_COUNT * 3);
 		//printf("strlen one_frame r = %d, %d, %d\n", r, j, d);
 		usleep(17*1000);
-		test_i2c_write();
-		test_i2c_read();
+		test_i2c_read_reg();
 		usleep(500 * 1000);
 	}
 
