@@ -12,8 +12,8 @@
 
 #include "rokid_led.h"
 
-//#define SERIAL_DEV "/dev/ttyACM0"
-#define SERIAL_DEV "/dev/tty.usbmodem14235"
+#define SERIAL_DEV "/dev/ttyACM0"
+//#define SERIAL_DEV "/dev/tty.usbmodem14235"
 
 static int speed_arr[] = { B115200, B57600, B38400, B19200, B9600, B4800, B2400, B1800,
     B1200, B600, B300, B200, B150, B134, B110, B75, B50};
