@@ -284,27 +284,6 @@ static int led_dev_encode_data(unsigned char *des, int start, unsigned char *src
 	return 0;
 }
 
-/*
-int led_dev_startup(struct led_dev *led_d)
-{
-	int r;
-	int index = 0;
-        led_d->frame_data[index] = ESCAPE_HEADER;
-        index ++;
-        led_d->frame_data[index] = ORDER_LED_STARTUP;
-        index ++;
-	int actual;
-	r = led_dev_write_64(led_d, led_d->frame_data, 2, &actual);
-	if (r != 0) return r;
-	int retry_times = 0;
-	do {
-		r = led_dev_read(led_d, led_d->frame_data, 64, &actual);
-		retry_times ++;
-	} while (retry_times <= 10 && actual == 0);
-	return 0;
-} 
-*/
-
 int led_dev_flush_frame(struct led_dev *led_d, unsigned char *data, int data_len)
 {
 	if (data_len != FRAME_LEN) return ROKID_LED_ERROR_FRAME_LEN;
@@ -327,37 +306,36 @@ int led_dev_flush_frame(struct led_dev *led_d, unsigned char *data, int data_len
 
 int led_dev_codec_i2c_write(struct led_dev *led_d, unsigned char device_addr, unsigned char *data, int data_len, int send_stop_bit)
 {
-        if (data_len > 251) return ROKID_LED_ERROR_FRAME_LEN;
-        int i2c_data_len = HEADER_LEN + 6 + data_len * 2 + FOOTER_LEN;
-        int index = 0;
+    if (data_len > 251) return ROKID_LED_ERROR_FRAME_LEN;
+    int i2c_data_len = HEADER_LEN + 6 + data_len * 2 + FOOTER_LEN;
+    int index = 0;
 	led_d->i2c_data[index] = ESCAPE_HEADER;
-        index ++;
-        led_d->i2c_data[index] = ORDER_CODEC_I2C_RW;
-        index ++;
+    index ++;
+    led_d->i2c_data[index] = ORDER_CODEC_I2C_RW;
+    index ++;
 	led_d->i2c_data[index] = ESCAPE_DATA;
-        index ++;
-        led_d->i2c_data[index] = 0x01;
-        index ++;
+    index ++;
+    led_d->i2c_data[index] = 0x01;//write
+    index ++;
 	led_d->i2c_data[index] = ESCAPE_DATA;
 	index ++;
 	led_d->i2c_data[index] = device_addr;
 	index ++;
 	led_d->i2c_data[index] = ESCAPE_DATA;
-        index ++;
-        led_d->i2c_data[index] = (send_stop_bit == 0) ? 0x00 : 0x01;
-        index ++;
-        led_dev_encode_data(led_d->i2c_data, index, data, data_len);
-        index += data_len * 2;
-        led_d->i2c_data[index] = ESCAPE_FOOTER;
-        index ++;
-        led_d->i2c_data[index] = ESCAPE_FOOTER;
-        int actual;
-        int r;
-        r = led_dev_write(led_d, led_d->i2c_data, i2c_data_len, &actual);
-	printf("write : %d\n", actual);
-        int read_r;
+    index ++;
+    led_d->i2c_data[index] = (send_stop_bit == 0) ? 0x00 : 0x01;
+    index ++;
+    led_dev_encode_data(led_d->i2c_data, index, data, data_len);
+    index += data_len * 2;
+    led_d->i2c_data[index] = ESCAPE_FOOTER;
+    index ++;
+    led_d->i2c_data[index] = ESCAPE_FOOTER;
+    int actual;
+    int r;
+    r = led_dev_write(led_d, led_d->i2c_data, i2c_data_len, &actual);
+    int read_r;
 	int read_actual;
-        read_r = led_dev_read(led_d, led_d->i2c_data, 512, &read_actual);
+    read_r = led_dev_read(led_d, led_d->i2c_data, 512, &read_actual);
 	/*
 	int k;
 	for (k = 0; k < read_actual; k ++) {
@@ -375,13 +353,75 @@ int led_dev_codec_i2c_write(struct led_dev *led_d, unsigned char device_addr, un
 	if (led_d->i2c_data[2] != 0x80) return ROKID_LED_ERROR_WRITE_FAILED;
 	if (led_d->i2c_data[3] != 0x01) return ROKID_LED_ERROR_WRITE_FAILED;// order
 	if (led_d->i2c_data[4] != 0x80) return ROKID_LED_ERROR_WRITE_FAILED;
-        if (led_d->i2c_data[5] != 0x01) return ROKID_LED_ERROR_WRITE_FAILED;// ack or nack
-	for (i = 6; i < read_actual - 2; i ++) {
-		if (led_d->i2c_data[i] != 0x80) return ROKID_LED_ERROR_WRITE_FAILED;
-		i++;
-		unsigned char i2c_write_bytes = led_d->i2c_data[i];
-		printf("i2c has write %d bytes\n", i2c_write_bytes);
-	}
-        return read_r;
+    if (led_d->i2c_data[5] != 0x01) return ROKID_LED_ERROR_WRITE_FAILED;// ack or nack
+	if (led_d->i2c_data[6] != 0x80) return ROKID_LED_ERROR_WRITE_FAILED;
+    unsigned char i2c_write_bytes = led_d->i2c_data[7];
+    printf("i2c wrote %d bytes\n", i2c_write_bytes);
+    return read_r;
+}
+
+int led_dev_codec_i2c_read(struct led_dev *led_d, unsigned char device_addr, unsigned char *data, int data_len, int send_stop_bit, unsigned char *readed_data, int *readed_len)
+{
+    if (data_len > 251) return ROKID_LED_ERROR_FRAME_LEN;
+    int i2c_data_len = HEADER_LEN + 6 + data_len * 2 + FOOTER_LEN;
+    int index = 0;
+    led_d->i2c_data[index] = ESCAPE_HEADER;
+    index ++;
+    led_d->i2c_data[index] = ORDER_CODEC_I2C_RW;
+    index ++;
+    led_d->i2c_data[index] = ESCAPE_DATA;
+    index ++;
+    led_d->i2c_data[index] = 0x02;//read
+    index ++;
+    led_d->i2c_data[index] = ESCAPE_DATA;
+    index ++;
+    led_d->i2c_data[index] = device_addr;
+    index ++;
+    led_d->i2c_data[index] = ESCAPE_DATA;
+    index ++;
+    led_d->i2c_data[index] = (send_stop_bit == 0) ? 0x00 : 0x01;
+    index ++;
+    led_dev_encode_data(led_d->i2c_data, index, data, data_len);
+    index += data_len * 2;
+    led_d->i2c_data[index] = ESCAPE_FOOTER;
+    index ++;
+    led_d->i2c_data[index] = ESCAPE_FOOTER;
+    int actual;
+    int r;
+    r = led_dev_write(led_d, led_d->i2c_data, i2c_data_len, &actual);
+    printf("write : %d\n", actual);
+    int read_r;
+    int read_actual;
+    read_r = led_dev_read(led_d, led_d->i2c_data, 512, &read_actual);
+    /*
+    int k;
+    for (k = 0; k < read_actual; k ++) {
+        printf("%02x ", led_d->i2c_data[k]);
+    }
+    printf("\n");
+    */
+    int i;
+    if (read_actual % 2 != 0) return ROKID_LED_ERROR_READ_FAILED;
+    if (read_actual < 6) return ROKID_LED_ERROR_READ_FAILED;
+    if (led_d->i2c_data[0] != 0x81) return ROKID_LED_ERROR_READ_FAILED;
+    if (led_d->i2c_data[1] != 0x03) return ROKID_LED_ERROR_READ_FAILED;
+    if (led_d->i2c_data[read_actual - 2] != 0x82) return ROKID_LED_ERROR_READ_FAILED;
+    if (led_d->i2c_data[read_actual - 1] != 0x82) return ROKID_LED_ERROR_READ_FAILED;
+    if (led_d->i2c_data[2] != 0x80) return ROKID_LED_ERROR_READ_FAILED;
+    if (led_d->i2c_data[3] != 0x01) return ROKID_LED_ERROR_READ_FAILED;// order
+    if (led_d->i2c_data[4] != 0x80) return ROKID_LED_ERROR_READ_FAILED;
+    if (led_d->i2c_data[5] != 0x01) return ROKID_LED_ERROR_READ_FAILED;// ack or nack
+    int readed_i = 0;
+    printf("i2c readed ");
+    for (i = 6; i < read_actual - 2; i ++) {
+        if (led_d->i2c_data[i] != 0x80) return ROKID_LED_ERROR_READ_FAILED;
+        i++;
+        readed_data[readed_i] = led_d->i2c_data[i];
+        printf("%02x ", readed_data[readed_i]);
+        readed_i ++;
+    }
+    printf("\n");
+    *readed_len = readed_i;
+    return read_r;
 }
 

@@ -42,4 +42,6 @@ int led_dev_read(struct led_dev *led_d, unsigned char *data, int data_len, int *
 
 int led_dev_codec_i2c_write(struct led_dev *led_d, unsigned char device_addr, unsigned char *data, int data_len, int send_stop_bit);
 
+int led_dev_codec_i2c_read(struct led_dev *led_d, unsigned char device_addr, unsigned char *data, int data_len, int send_stop_bit, unsigned char *readed_data, int *readed_len);
+
 #endif
