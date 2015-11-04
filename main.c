@@ -103,8 +103,6 @@ int main(int argc, char **argv)
 		r = led_dev_flush_frame(led_dd, one_frame, LED_COUNT * 3);
 		//printf("strlen one_frame r = %d, %d, %d\n", r, j, d);
 		usleep(17*1000);
-		test_i2c_read_reg();
-		usleep(500 * 1000);
 	}
 
 	return 0;
