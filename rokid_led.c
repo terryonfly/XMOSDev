@@ -360,10 +360,10 @@ int led_dev_codec_i2c_write(struct led_dev *led_d, unsigned char device_addr, un
     return read_r;
 }
 
-int led_dev_codec_i2c_read(struct led_dev *led_d, unsigned char device_addr, unsigned char *data, int data_len, int send_stop_bit, unsigned char *readed_data, int *readed_len)
+int led_dev_codec_i2c_read(struct led_dev *led_d, unsigned char device_addr, unsigned char data_len, int send_stop_bit, unsigned char *readed_data, int *readed_len)
 {
     if (data_len > 251) return ROKID_LED_ERROR_FRAME_LEN;
-    int i2c_data_len = HEADER_LEN + 6 + data_len * 2 + FOOTER_LEN;
+    int i2c_data_len = HEADER_LEN + 6 + 1 * 2 + FOOTER_LEN;
     int index = 0;
     led_d->i2c_data[index] = ESCAPE_HEADER;
     index ++;
@@ -381,8 +381,10 @@ int led_dev_codec_i2c_read(struct led_dev *led_d, unsigned char device_addr, uns
     index ++;
     led_d->i2c_data[index] = (send_stop_bit == 0) ? 0x00 : 0x01;
     index ++;
-    led_dev_encode_data(led_d->i2c_data, index, data, data_len);
-    index += data_len * 2;
+    led_d->i2c_data[index] = ESCAPE_DATA;
+    index ++;
+    led_d->i2c_data[index] = data_len;
+    index ++;
     led_d->i2c_data[index] = ESCAPE_FOOTER;
     index ++;
     led_d->i2c_data[index] = ESCAPE_FOOTER;

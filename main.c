@@ -13,13 +13,11 @@ int running = 1;
 void test_i2c_read() {
 	int r;
 	char test_dev_addr = 0x6c;
-	char test_reg_addr = 0x10;
 	int test_send_stop_bit = 1;
-	int test_i2c_len = 1;
-	unsigned char test_i2c_dat[1] = {test_reg_addr};
+	int test_to_read_len = 1;
 	int readed_len = 256;
 	unsigned char *readed_data = (unsigned char *)malloc(readed_len);
-	r = led_dev_codec_i2c_read(led_dd, test_dev_addr, test_i2c_dat, test_i2c_len, test_send_stop_bit, readed_data, &readed_len);
+	r = led_dev_codec_i2c_read(led_dd, test_dev_addr, test_to_read_len, test_send_stop_bit, readed_data, &readed_len);
 }
 
 void test_i2c_write() {
@@ -27,7 +25,7 @@ void test_i2c_write() {
 	char test_dev_addr = 0x6c;
 	char test_reg_addr = 0x10;
 	char test_val = 0x07;
-	int test_send_stop_bit = 1;
+	int test_send_stop_bit = 0;
 	int test_i2c_len = 2;
 	unsigned char test_i2c_dat[2] = {test_reg_addr, test_val};
 	r = led_dev_codec_i2c_write(led_dd, test_dev_addr, test_i2c_dat, test_i2c_len, test_send_stop_bit);
@@ -88,6 +86,7 @@ int main(int argc, char **argv)
 		r = led_dev_flush_frame(led_dd, one_frame, LED_COUNT * 3);
 		//printf("strlen one_frame r = %d, %d, %d\n", r, j, d);
 		usleep(17*1000);
+		test_i2c_write();
 		test_i2c_read();
 		usleep(500 * 1000);
 	}
