@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <signal.h>
 
-#include "rokid_led.h"
+#include "rokid_xmos.h"
 
-struct led_dev *led_dd;
+struct xmos_dev *xmos_dd;
 
 int running = 1;
 
@@ -15,7 +15,7 @@ void test_i2c_read_reg() {
 	char test_dev_addr = 0x6c;
 	char test_reg_addr = 0x10;
 	unsigned char test_val;
-	r = led_dev_codec_i2c_read_reg(led_dd, test_dev_addr, test_reg_addr, &test_val);
+	r = xmos_dev_electric_i2c_read_reg(xmos_dd, test_dev_addr, test_reg_addr, &test_val);
 }
 
 void test_i2c_write_reg() {
@@ -23,7 +23,7 @@ void test_i2c_write_reg() {
 	char test_dev_addr = 0x6c;
 	char test_reg_addr = 0x10;
 	char test_val = 0x07;
-	r = led_dev_codec_i2c_write_reg(led_dd, test_dev_addr, test_reg_addr, test_val);
+	r = xmos_dev_electric_i2c_write_reg(xmos_dd, test_dev_addr, test_reg_addr, test_val);
 }
 
 void test_i2c_read() {
@@ -33,7 +33,7 @@ void test_i2c_read() {
 	int test_to_read_len = 1;
 	int readed_len = 256;
 	unsigned char *readed_data = (unsigned char *)malloc(readed_len);
-	r = led_dev_codec_i2c_read(led_dd, test_dev_addr, test_to_read_len, test_send_stop_bit, readed_data, &readed_len);
+	r = xmos_dev_electric_i2c_read(xmos_dd, test_dev_addr, test_to_read_len, test_send_stop_bit, readed_data, &readed_len);
 }
 
 void test_i2c_write() {
@@ -45,13 +45,13 @@ void test_i2c_write() {
 	int test_i2c_len = 2;
 	unsigned char test_i2c_dat[2] = {test_reg_addr, test_val};
 	int test_wrote_len;
-	r = led_dev_codec_i2c_write(led_dd, test_dev_addr, test_i2c_dat, test_i2c_len, test_send_stop_bit, &test_wrote_len);
+	r = xmos_dev_electric_i2c_write(xmos_dd, test_dev_addr, test_i2c_dat, test_i2c_len, test_send_stop_bit, &test_wrote_len);
 }
 
 void cs(int n)
 {
 	running = 0;
-	led_dev_close(led_dd);
+	xmos_dev_close(xmos_dd);
 	printf("now dowm!\n");
 	exit(0);
 }
@@ -73,11 +73,11 @@ int main(int argc, char **argv)
 	signal(SIGTERM, cs);  //kill
 
 	int r;
-	led_dd = led_dev_open(&r);
+	xmos_dd = xmos_dev_open(&r);
 	printf("dev open success.\n");
 
 	/*	
-		r = led_dev_startup(led_dd);
+		r = xmos_dev_startup(xmos_dd);
 		*/
 	int k = 0;
 	while (running) {
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 		k ++;
 		if (k >= LED_COUNT) k = 0;
 
-		r = led_dev_flush_frame(led_dd, one_frame, LED_COUNT * 3);
+		r = xmos_dev_led_flush_frame(xmos_dd, one_frame, LED_COUNT * 3);
 		//printf("strlen one_frame r = %d, %d, %d\n", r, j, d);
 		usleep(17*1000);
 	}
