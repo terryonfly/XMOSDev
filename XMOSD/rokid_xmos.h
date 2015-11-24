@@ -1,7 +1,7 @@
 #ifndef __ROKID_XMOS_H
 #define __ROKID_XMOS_H
 
-#define LED_COUNT 8*4
+#define LED_COUNT 8*5
 
 enum rokid_xmos_error {
 	/* Success (no error) */
