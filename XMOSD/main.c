@@ -90,6 +90,8 @@ int event_handler(void)
 		for (n = 0; n < nfds; ++n) {
 
 			if (events[n].data.fd == socket_led) {
+				memset(&local, 0, sizeof(local));
+				memset(&addrlen, 0, sizeof(addrlen));
 				conn_sock = accept(socket_led, (struct sockaddr *)&local, &addrlen);
 				if (conn_sock == -1) {
 					perror("accept");
