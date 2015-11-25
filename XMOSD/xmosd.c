@@ -51,7 +51,8 @@ int process_ammeter(int fd, int hubfd)
 
 void amp_data_decode(unsigned char *buf, int len)
 {
-    for (int i = 0; i < len; i ++) {
+    int i;
+    for (i = 0; i < len; i ++) {
         if (buf[i] == 0x81 && (i + 1) < len) {
             i ++;
 //            current_order = buf[i];
@@ -105,7 +106,8 @@ int process_amp(int fd, int hubfd)
 
 void led_data_decode(unsigned char *buf, int len)
 {
-    for (int i = 0; i < len; i ++) {
+    int i;
+    for (i = 0; i < len; i ++) {
         if (buf[i] == 0x81 && (i + 1) < len) {
             i ++;
 //            current_order = buf[i];

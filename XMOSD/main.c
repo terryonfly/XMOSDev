@@ -181,6 +181,8 @@ int event_handler(struct sock_func *sfs)
 #ifdef ANDROID
 int main(void)
 {
+	preprocess();
+
 	struct sock_func *sf;
 
 	ALOGI("Xmosd started");
@@ -219,7 +221,6 @@ int create_socket(char *name)
 	struct sockaddr_un addr;
 	int fd;
 
-
 	fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (fd < 0) {
 		perror("socket");
@@ -244,6 +245,8 @@ int main(void)
 
 	signal(SIGINT, cs);  //ctrl+c
 	signal(SIGTERM, cs);  //kill
+
+	preprocess();
 
 	char spath[1024] = {0};
 	struct sock_func *sf;
