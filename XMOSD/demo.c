@@ -47,7 +47,7 @@ void test_i2c_write(struct xmos_dev *xmos_d) {
     r = xmos_dev_electric_i2c_write(xmos_d, test_dev_addr, test_i2c_dat, test_i2c_len, test_send_stop_bit, &test_wrote_len);
 }
 
-//*
+/*
 int main(int argc, char **argv)
 {
 	printf("now alive!\n");
