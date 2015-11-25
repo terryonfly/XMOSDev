@@ -30,13 +30,19 @@ int xmos_open() {
     return fd;
 }
 
+int xmos_write(int fd) {
+    int ret;
+    ret = write(fd, "bbbbdddd", strlen("bbbbdddd"));
+    return ret;
+}
+
 int main(int argc, char **argv)
 {
     int fd;
     fd = xmos_open();
 
     while (1) {
-        if (write(fd, "bbbbdddd", strlen("bbbbdddd")) < 0)
+        if (xmos_write(fd) < 0)
             perror("write");
         usleep(500*1000);
     }
