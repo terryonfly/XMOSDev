@@ -10,16 +10,9 @@
 
 char *sock_addr = "/tmp/xmosd_led";
 
-int main(int argc, char **argv)
-{
-
-    char *msg = "Hello, world\n";
+int xmos_open() {
     int addrlen, fd;
-
     struct sockaddr_un addr_un;
-
-    if (argc== 3)
-        sock_addr = argv[2];
 
     addr_un.sun_family = AF_UNIX;
     strcpy(addr_un.sun_path, sock_addr);
@@ -34,10 +27,16 @@ int main(int argc, char **argv)
         perror("connect");
         return -1;
     }
+    return fd;
+}
 
+int main(int argc, char **argv)
+{
+    int fd;
+    fd = xmos_open();
 
     while (1) {
-        if (write(fd, argv[1], strlen(argv[1])) < 0)
+        if (write(fd, "bbbbdddd", strlen("bbbbdddd")) < 0)
             perror("write");
         usleep(500*1000);
     }
