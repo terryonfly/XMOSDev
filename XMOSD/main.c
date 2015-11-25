@@ -201,7 +201,7 @@ int main(void)
 		sf++;
 	}
 
-	event_handler(sock_funcs);
+	event_handler((struct sock_func *)&sock_funcs);
 
 	return 0;
 }
