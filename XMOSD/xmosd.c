@@ -55,7 +55,7 @@ int process_amp(int fd, int hubfd)
             printf("%d closed", fd);
             close(fd);
         } else {	/* Process data */
-            printf("amp: %s %d\n", buf, num);
+            printf("amp: %02x %d\n", buf, num);
         }
     } while(0);
 
