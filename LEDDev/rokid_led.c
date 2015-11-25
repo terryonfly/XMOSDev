@@ -34,7 +34,6 @@ typedef struct led_dev {
 struct led_dev *led_dev_open()
 {
     int addrlen, fd;
-
     struct sockaddr_un addr_un;
 
     addr_un.sun_family = AF_UNIX;
@@ -42,6 +41,12 @@ struct led_dev *led_dev_open()
 
     if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
         perror("socket");
+        return (struct led_dev *)-1;
+    }
+
+    addrlen = offsetof(struct sockaddr_un, sun_path) + strlen(addr_un.sun_path);
+    if (connect(fd, (struct sockaddr *)&addr_un,  addrlen) < 0) {
+        perror("connect");
         return (struct led_dev *)-1;
     }
 
