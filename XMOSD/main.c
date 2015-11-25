@@ -14,86 +14,30 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <sys/stat.h>
-#include <signal.h>
 #endif
 
-#include "rokid_xmos.h"
-
-struct xmos_dev *xmos_dd;
+#include "xmosd.h"
 
 int running = 1;
 
-int preprocess(void)
-{
-	return 0;
-}
+extern struct sock_func *sock_funcs;
 
-/* process xmosd_amp connection */
-int process_amp(int fd)
-{
-	char buf[64*1024];
-	int num;
-
-	memset(buf, 0, sizeof(buf));
-
-	do {
-		num = read(fd, buf, sizeof(buf));
-		if (num < 0) {
-			if (errno != EAGAIN) {
-				close(fd);
-				perror("read");
-				return -1;
-			}
-			break;
-		} else if (num == 0) {
-			printf("%d closed", fd);
-			close(fd);
-		} else {	/* Process data */
-			printf("amp: %s %d\n", buf, num);
-		}
-	} while(0);
-
-
-	return 0;
-
-}
-
-/* process xmosd_len connection */
-int process_led(int fd)
-{
-	char buf[64*1024];
-	int num;
-
-	memset(buf, 0, sizeof(buf));
-
-	do {
-		num = read(fd, buf, sizeof(buf));
-		if (num < 0) {
-			if (errno != EAGAIN) {
-				close(fd);
-				perror("read");
-				return -1;
-			}
-			break;
-		} else if (num == 0) {
-			printf("%d closed", fd);
-			close(fd);
-		} else {	/* Process data */
-			printf("%s %d\n", buf, num);
-		}
-	} while(0);
-
-	return 0;
-}
-
+struct {
+	int hubfd;
+	int (*func)(int, struct sock_func*);
+} hub_func = {
+		.hubfd = 0,
+		.func = process_hub,
+};
 
 /* TODO: Handler sock_func */
 /* Internal members */
-int socket_led, socket_ammeter, socket_amp;
+int hubfd;
+
 #define MAX_EVENTS (3*16)
-struct fd_func {
-	int fd;
-	int (*func)(int fd);
+struct listen_conns {
+	int listenfd;
+	int connsfd;
 };
 
 int watch_listen(int epollfd, int listenfd)
@@ -101,8 +45,8 @@ int watch_listen(int epollfd, int listenfd)
 	int flag;
 	struct epoll_event ev;
 
-	flag = fcntl(socket_led, F_GETFL, 0);
-	fcntl(socket_led, F_SETFL, flag | O_NONBLOCK);
+	flag = fcntl(listenfd, F_GETFL, 0);
+	fcntl(listenfd, F_SETFL, flag | O_NONBLOCK);
 	ev.events = EPOLLIN;
 	ev.data.fd = listenfd;
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, listenfd, &ev) == -1) {
@@ -143,123 +87,129 @@ int watch_conn(int epollfd, int listenfd)
 }
 
 /* event loop */
-int event_handler(void)
+int event_handler(struct sock_func *sfs)
 {
 	int efd,  nfds;
 	int conn;
+	struct sock_func *sf;
 	struct epoll_event events[MAX_EVENTS];
-	struct fd_func fd_func[MAX_EVENTS];
+	struct listen_conns  lcs[MAX_EVENTS];
 
 
-	memset(fd_func, 0, sizeof(fd_func));
+	memset(lcs, 0, sizeof(lcs));
 	efd = epoll_create(256);
 	if (efd == -1) {
 		perror("epoll_create1");
 		exit(-1);
 	}
 
-	watch_listen(efd, socket_led);
-	watch_listen(efd, socket_amp);
+	sf = sfs;
+	while (sf->fd > 0) {
+		watch_listen(efd, sf->fd);
+		sf++;
+	}
 
-	while (1) {
-		int n, i;
+
+	while (running) {
+		int n;
 
 		nfds = epoll_wait(efd, events, MAX_EVENTS, -1);
 		if (nfds == -1) {
 			perror("epoll_wait");
 			continue;
-			/* exit(-1); */ /* avoid strace exist */
+			/* avoid strace exist */
+			/* exit(-1); */
 		}
 
 		for (n = 0; n < nfds; ++n) {
-			if (events[n].data.fd == socket_led) {
-				conn = watch_conn(efd, socket_led);
-				i = 0;
-				while (fd_func[i].fd)
-					i++;
+			struct listen_conns *lc;
 
-				fd_func[i].fd = conn;
-				fd_func[i].func = process_led;
-			} else if (events[n].data.fd == socket_amp) {
-				conn = watch_conn(efd, socket_amp);
-				i = 0;
-				while (fd_func[i].fd)
-					i++;
-
-				fd_func[i].fd = conn;
-				fd_func[i].func = process_amp;
-			} else {
-				/* process connection */
-				int i;
-
-				for (i=0; i<MAX_EVENTS; i++)
-					if (fd_func[i].fd == events[n].data.fd)
-						fd_func[i].func(fd_func[i].fd);
-				/* something else */
-				/* TODO: Should callback close fd */
+			sf = sfs;
+			while (sf->fd > 0) {
+				if (events[n].data.fd == sf->fd)
+					break;
+				sf++;
 			}
+
+			if (sf->fd > 0) { /* listen */
+				conn = watch_conn(efd, sf->fd);
+
+				/* add a record */
+				lc = &lcs;
+				while (lc->listenfd > 0)
+					lc++;
+				lc->listenfd = sf->fd;
+				lc->connsfd = conn;
+			} else { /* connection */
+				int status;
+
+				if (events[n].data.fd == hubfd) {
+					hub_func.func(hubfd, sfs);
+					continue;
+				} else {
+					lc = &lcs;
+					while (lc->connsfd != events[n].data.fd)
+						lc++;
+
+					sf = sfs;
+					while (sf->fd != lc->listenfd)
+						sf++;
+
+					status = sf->func(lc->connsfd, hubfd);
+
+					if (status == 0) { /* connect closed */
+						struct epoll_event ev;
+
+						epoll_ctl(efd, EPOLL_CTL_DEL, lc->connsfd, &ev);
+						/* delete a record */
+						lc->listenfd = 0;
+						lc->connsfd = 0;
+					}
+				}
+			}
+
 		}
 	}
 
 	return 0;
 }
 
-//int main(int argc, char **argv)
-//{
-//	printf("now alive!\n");
-//
-//	int r;
-//	xmos_dd = xmos_dev_open(&r);
-//	printf("dev open success.\n");
-//
-//	int k = 0;
-//	while (running) {
-//		unsigned char *one_frame = (unsigned char *)malloc(LED_COUNT * 3);
-//		int i;
-//		for (i = 0; i < LED_COUNT * 3; i ++) {
-//			if (i / 3 == k) {
-//				if (i % 3 == 0) one_frame[i] = 0xff;
-//				if (i % 3 == 1) one_frame[i] = 0xff;
-//				if (i % 3 == 2) one_frame[i] = 0x00;
-//			} else {
-//				if (i % 3 == 0) one_frame[i] = 0x00;
-//				if (i % 3 == 1) one_frame[i] = 0x00;
-//				if (i % 3 == 2) one_frame[i] = 0x00;
-//
-//			}
-//		}
-//		k ++;
-//		if (k >= LED_COUNT) k = 0;
-//
-//		r = xmos_dev_led_flush_frame(xmos_dd, one_frame, LED_COUNT * 3);
-//		usleep(17*1000);
-//	}
-//
-//	return 0;
-//}
-
 #ifdef ANDROID
 int main(void)
 {
+	int i;
+
 	ALOGI("Xmosd started");
 
-	socket_led = android_get_control_socket("xmosd_led");
-	socket_ammeter = android_get_control_socket("xmosd_ammeter");
-	socket_amp = android_get_control_socket("xmosd_amp");
-
-	if (listen(socket_led, 4) < 0 ||
-	    listen(socket_ammeter, 4) < 0 ||
-	    listen(socket_amp, 4) < 0) {
-		ALOGE("Failed to listen xmosd_devs");
+	hubfd = preprocess();
+	if (hubfd < 0) {
+		ALOGE("preprocess failed");
 		return -1;
 	}
 
-	event_handler();
+	i = 0;
+	while (sock_funcs[i].socket) {
+		sock_funcs[i].fd = android_get_control_socket(sock_funcs[i].socket);
+		if (listen(sock_funcs[i].fd, 4) < 0) {
+			perror("listen");
+			return -1;
+		}
+		i++;
+	}
+
+	event_handler(sock_funcs);
 
 	return 0;
 }
 
 #else
+void cs(int n)
+{
+	running = 0;
+	printf("now dowm!\n");
+	exit(0);
+}
+
 int create_socket(char *name)
 {
 	struct sockaddr_un addr;
@@ -286,20 +236,32 @@ int create_socket(char *name)
 
 int main(void)
 {
-	socket_led = create_socket("/tmp/xmosd_led");
-	socket_ammeter =  create_socket("/tmp/xmosd_ammeter");
-	socket_amp = create_socket("/tmp/xmosd_amp");
+	printf("now alive!\n");
 
-	if (listen(socket_led, 4) < 0 ||
-		listen(socket_ammeter, 4) < 0 ||
-		listen(socket_amp, 4) < 0) {
-		perror("Failed listen xmosd_devs");
+	signal(SIGINT, cs);  //ctrl+c
+	signal(SIGTERM, cs);  //kill
+
+	char spath[1024] = {0};
+	struct sock_func *sf;
+
+	hub_func.hubfd = preprocess();
+	if (hubfd < 0) {
 		return -1;
 	}
 
-	event_handler();
+	sf = &sock_funcs;
+	while (sf->socket) {
+		snprintf(spath, sizeof(spath), "/tmp/%s", sf->socket);
+		sf->fd = create_socket(spath);
+		if (listen(sf->fd, 4) < 0) {
+			perror("listen");
+			return -1;
+		}
+		sf++;
+	}
+
+	event_handler(&sock_funcs);
 
 	return 0;
-
 }
 #endif
