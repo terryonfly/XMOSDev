@@ -30,50 +30,37 @@
 
 #define FRAME_LEN (3 * LED_COUNT)
 
-typedef struct xmos_dev {
-	int fd_xmos;
-    unsigned char *xmos_write_data;
-	unsigned char *i2c_data;
-} xmos_dev;
+unsigned char xmos_i2c_data[512];
+unsigned char xmos_write_data[1024];
 
-struct xmos_dev *xmos_dev_open()
+int xmos_dev_open()
 {
 	int fd_xmos = open_serial(SERIAL_DEV);
 	if (fd_xmos == -1) {
 		printf("Cannot open device\n");
-        return (struct xmos_dev *)ROKID_XMOS_ERROR_DEVICE_OPEN_FAILED;
+        return ROKID_XMOS_ERROR_DEVICE_OPEN_FAILED;
 	}
 	int ret;
 	ret = set_speed(fd_xmos, 115200);
 	if (ret == -1) {
 		printf("Set speed failed : %d\n", ret);
-		return (struct xmos_dev *)ROKID_XMOS_ERROR_INIT_FAILED;
+		return ROKID_XMOS_ERROR_INIT_FAILED;
 	}
 	ret = set_parity(fd_xmos, 8, 1, 0);
 	if (ret == -1) {
 		printf("Set parity failed : %d\n", ret);
-		return (struct xmos_dev *)ROKID_XMOS_ERROR_INIT_FAILED;
+		return ROKID_XMOS_ERROR_INIT_FAILED;
 	}
 
-	struct xmos_dev *xmos_d = malloc(sizeof(struct xmos_dev));
-	xmos_d->fd_xmos = fd_xmos;
-	int xmos_write_data_len = HEADER_LEN + FRAME_LEN * 2 + FOOTER_LEN;
-	xmos_d->xmos_write_data = (unsigned char *)malloc(xmos_write_data_len);
-	xmos_d->i2c_data = (unsigned char *)malloc(512);
-	return xmos_d;
+	return fd_xmos;
 }
 
-void xmos_dev_close(struct xmos_dev *xmos_d)
+void xmos_dev_close(int xmos_d)
 {
-	close_serial(xmos_d->fd_xmos);
-	xmos_d->fd_xmos = -1;
-	free(xmos_d->xmos_write_data);
-	free(xmos_d->i2c_data);
-	free(xmos_d);
-	xmos_d = NULL;
+	close_serial(xmos_d);
 }
 
-static int xmos_dev_encode_data(unsigned char *des, int start, unsigned char *src, int src_len)
+int xmos_dev_encode_data(unsigned char *des, int start, unsigned char *src, int src_len)
 {
     int i;
     for (i = 0; i < src_len; i ++) {
@@ -88,28 +75,28 @@ static int xmos_dev_encode_data(unsigned char *des, int start, unsigned char *sr
     return 0;
 }
 
-int xmos_dev_read(struct xmos_dev *xmos_d, unsigned char *data, int data_len, int *actual)
+int xmos_dev_read(int xmos_d, unsigned char *data, int data_len, int *actual)
 {
-    *actual = read(xmos_d->fd_xmos, data, data_len);
+    *actual = read(xmos_d, data, data_len);
     return 0;
 }
 
-int xmos_dev_write(struct xmos_dev *xmos_d, unsigned char order, unsigned char *data, int data_len)
+int xmos_dev_write(int xmos_d, unsigned char order, unsigned char *data, int data_len)
 {
     int xmos_data_len = HEADER_LEN + data_len * 2 + FOOTER_LEN;
     int index = 0;
-    xmos_d->xmos_write_data[index] = ESCAPE_HEADER;
+    xmos_write_data[index] = ESCAPE_HEADER;
     index ++;
-    xmos_d->xmos_write_data[index] = order;
+    xmos_write_data[index] = order;
     index ++;
-    xmos_dev_encode_data(xmos_d->xmos_write_data, index, data, data_len);
+    xmos_dev_encode_data(xmos_write_data, index, data, data_len);
     index += data_len * 2;
-    xmos_d->xmos_write_data[index] = ESCAPE_FOOTER;
+    xmos_write_data[index] = ESCAPE_FOOTER;
     index ++;
-    xmos_d->xmos_write_data[index] = ESCAPE_FOOTER;
+    xmos_write_data[index] = ESCAPE_FOOTER;
     int actual;
     int ret;
-    actual = write(xmos_d->fd_xmos, xmos_d->xmos_write_data, xmos_data_len);
+    actual = write(xmos_d, xmos_write_data, xmos_data_len);
     ret = (actual == xmos_data_len) ? 0 : ROKID_XMOS_ERROR_WRITE_FAILED;
     return ret;
 }
@@ -118,7 +105,7 @@ int xmos_dev_write(struct xmos_dev *xmos_d, unsigned char order, unsigned char *
  * LED Transfer
  */
 
-int xmos_dev_led_flush_frame(struct xmos_dev *xmos_d,
+int xmos_dev_led_flush_frame(int xmos_d,
                              unsigned char *data,
                              int data_len)
 {
@@ -130,7 +117,7 @@ int xmos_dev_led_flush_frame(struct xmos_dev *xmos_d,
  * Codec Transfer
  */
 
-int xmos_dev_codec_setting_eq(struct xmos_dev *xmos_d,
+int xmos_dev_codec_setting_eq(int xmos_d,
                               unsigned char eq)
 {
     // eq = 0x00 -> EFFECT_TYPE_MUSIC
@@ -144,7 +131,7 @@ int xmos_dev_codec_setting_eq(struct xmos_dev *xmos_d,
  * Electric I2C Transfer
  */
 
-int xmos_dev_electric_i2c_write(struct xmos_dev *xmos_d,
+int xmos_dev_electric_i2c_write(int xmos_d,
                             unsigned char device_addr,
                             unsigned char *data,
                             int data_len,
@@ -165,32 +152,32 @@ int xmos_dev_electric_i2c_write(struct xmos_dev *xmos_d,
     ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
     if (ret != 0) return ret;
 	int read_actual;
-    ret = xmos_dev_read(xmos_d, xmos_d->i2c_data, 512, &read_actual);
+    ret = xmos_dev_read(xmos_d, xmos_i2c_data, 512, &read_actual);
 	/*
 	int k;
 	for (k = 0; k < read_actual; k ++) {
-		printf("%02x ", xmos_d->i2c_data[k]);
+		printf("%02x ", xmos_i2c_data[k]);
 	}
 	printf("\n");
 	*/
 	if (read_actual % 2 != 0) return ROKID_XMOS_ERROR_WRITE_FAILED;
 	if (read_actual < 6) return ROKID_XMOS_ERROR_WRITE_FAILED;
-	if (xmos_d->i2c_data[0] != 0x81) return ROKID_XMOS_ERROR_WRITE_FAILED;
-	if (xmos_d->i2c_data[1] != 0x03) return ROKID_XMOS_ERROR_WRITE_FAILED;
-	if (xmos_d->i2c_data[read_actual - 2] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
-	if (xmos_d->i2c_data[read_actual - 1] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
-	if (xmos_d->i2c_data[2] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
-	if (xmos_d->i2c_data[3] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// order
-	if (xmos_d->i2c_data[4] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
-    if (xmos_d->i2c_data[5] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// ack or nack
-	if (xmos_d->i2c_data[6] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
-    unsigned char i2c_write_bytes = xmos_d->i2c_data[7];
+	if (xmos_i2c_data[0] != 0x81) return ROKID_XMOS_ERROR_WRITE_FAILED;
+	if (xmos_i2c_data[1] != 0x03) return ROKID_XMOS_ERROR_WRITE_FAILED;
+	if (xmos_i2c_data[read_actual - 2] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
+	if (xmos_i2c_data[read_actual - 1] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
+	if (xmos_i2c_data[2] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
+	if (xmos_i2c_data[3] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// order
+	if (xmos_i2c_data[4] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
+    if (xmos_i2c_data[5] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// ack or nack
+	if (xmos_i2c_data[6] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
+    unsigned char i2c_write_bytes = xmos_i2c_data[7];
     printf("i2c wrote %d bytes\n", i2c_write_bytes);
     *wrote_len = i2c_write_bytes;
     return ret;
 }
 
-int xmos_dev_electric_i2c_read(struct xmos_dev *xmos_d,
+int xmos_dev_electric_i2c_read(int xmos_d,
                            unsigned char device_addr,
                            unsigned char data_len,
                            int send_stop_bit,
@@ -209,30 +196,30 @@ int xmos_dev_electric_i2c_read(struct xmos_dev *xmos_d,
     ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
     if (ret != 0) return ret;
     int read_actual;
-    ret = xmos_dev_read(xmos_d, xmos_d->i2c_data, 512, &read_actual);
+    ret = xmos_dev_read(xmos_d, xmos_i2c_data, 512, &read_actual);
     /*
     int k;
     for (k = 0; k < read_actual; k ++) {
-        printf("%02x ", xmos_d->i2c_data[k]);
+        printf("%02x ", xmos_i2c_data[k]);
     }
     printf("\n");
     */
     if (read_actual % 2 != 0) return ROKID_XMOS_ERROR_READ_FAILED;
     if (read_actual < 6) return ROKID_XMOS_ERROR_READ_FAILED;
-    if (xmos_d->i2c_data[0] != 0x81) return ROKID_XMOS_ERROR_READ_FAILED;
-    if (xmos_d->i2c_data[1] != 0x03) return ROKID_XMOS_ERROR_READ_FAILED;
-    if (xmos_d->i2c_data[read_actual - 2] != 0x82) return ROKID_XMOS_ERROR_READ_FAILED;
-    if (xmos_d->i2c_data[read_actual - 1] != 0x82) return ROKID_XMOS_ERROR_READ_FAILED;
-    if (xmos_d->i2c_data[2] != 0x80) return ROKID_XMOS_ERROR_READ_FAILED;
-    if (xmos_d->i2c_data[3] != 0x02) return ROKID_XMOS_ERROR_READ_FAILED;// order
-    if (xmos_d->i2c_data[4] != 0x80) return ROKID_XMOS_ERROR_READ_FAILED;
-    if (xmos_d->i2c_data[5] != 0x01) return ROKID_XMOS_ERROR_READ_FAILED;// ack or nack
+    if (xmos_i2c_data[0] != 0x81) return ROKID_XMOS_ERROR_READ_FAILED;
+    if (xmos_i2c_data[1] != 0x03) return ROKID_XMOS_ERROR_READ_FAILED;
+    if (xmos_i2c_data[read_actual - 2] != 0x82) return ROKID_XMOS_ERROR_READ_FAILED;
+    if (xmos_i2c_data[read_actual - 1] != 0x82) return ROKID_XMOS_ERROR_READ_FAILED;
+    if (xmos_i2c_data[2] != 0x80) return ROKID_XMOS_ERROR_READ_FAILED;
+    if (xmos_i2c_data[3] != 0x02) return ROKID_XMOS_ERROR_READ_FAILED;// order
+    if (xmos_i2c_data[4] != 0x80) return ROKID_XMOS_ERROR_READ_FAILED;
+    if (xmos_i2c_data[5] != 0x01) return ROKID_XMOS_ERROR_READ_FAILED;// ack or nack
     int readed_i = 0;
     printf("i2c readed ");
     for (i = 6; i < read_actual - 2; i ++) {
-        if (xmos_d->i2c_data[i] != 0x80) return ROKID_XMOS_ERROR_READ_FAILED;
+        if (xmos_i2c_data[i] != 0x80) return ROKID_XMOS_ERROR_READ_FAILED;
         i++;
-        readed_data[readed_i] = xmos_d->i2c_data[i];
+        readed_data[readed_i] = xmos_i2c_data[i];
         printf("%02x ", readed_data[readed_i]);
         readed_i ++;
     }
@@ -241,7 +228,7 @@ int xmos_dev_electric_i2c_read(struct xmos_dev *xmos_d,
     return ret;
 }
 
-int xmos_dev_electric_i2c_send_stop_bit(struct xmos_dev *xmos_d)
+int xmos_dev_electric_i2c_send_stop_bit(int xmos_d)
 {
     int i2c_data_len = 3;
     unsigned char i2c_data[i2c_data_len];
@@ -252,30 +239,30 @@ int xmos_dev_electric_i2c_send_stop_bit(struct xmos_dev *xmos_d)
     ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
     if (ret != 0) return ret;
     int read_actual;
-    ret = xmos_dev_read(xmos_d, xmos_d->i2c_data, 512, &read_actual);
+    ret = xmos_dev_read(xmos_d, xmos_i2c_data, 512, &read_actual);
     /*
     int k;
     for (k = 0; k < read_actual; k ++) {
-        printf("%02x ", xmos_d->i2c_data[k]);
+        printf("%02x ", xmos_i2c_data[k]);
     }
     printf("\n");
     */
     int i;
     if (read_actual % 2 != 0) return ROKID_XMOS_ERROR_WRITE_FAILED;
     if (read_actual < 6) return ROKID_XMOS_ERROR_WRITE_FAILED;
-    if (xmos_d->i2c_data[0] != 0x81) return ROKID_XMOS_ERROR_WRITE_FAILED;
-    if (xmos_d->i2c_data[1] != 0x03) return ROKID_XMOS_ERROR_WRITE_FAILED;
-    if (xmos_d->i2c_data[read_actual - 2] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
-    if (xmos_d->i2c_data[read_actual - 1] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
-    if (xmos_d->i2c_data[2] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
-    if (xmos_d->i2c_data[3] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// order
-    if (xmos_d->i2c_data[4] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
-    if (xmos_d->i2c_data[5] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// ack or nack
+    if (xmos_i2c_data[0] != 0x81) return ROKID_XMOS_ERROR_WRITE_FAILED;
+    if (xmos_i2c_data[1] != 0x03) return ROKID_XMOS_ERROR_WRITE_FAILED;
+    if (xmos_i2c_data[read_actual - 2] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
+    if (xmos_i2c_data[read_actual - 1] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
+    if (xmos_i2c_data[2] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
+    if (xmos_i2c_data[3] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// order
+    if (xmos_i2c_data[4] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
+    if (xmos_i2c_data[5] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// ack or nack
     printf("stop_bit sent\n");
     return ret;
 }
 
-int xmos_dev_electric_i2c_write_reg(struct xmos_dev *xmos_d,
+int xmos_dev_electric_i2c_write_reg(int xmos_d,
                                 unsigned char device_addr,
                                 unsigned char reg_addr,
                                 unsigned char data)
@@ -294,7 +281,7 @@ int xmos_dev_electric_i2c_write_reg(struct xmos_dev *xmos_d,
     return 0;
 }
 
-int xmos_dev_electric_i2c_read_reg(struct xmos_dev *xmos_d,
+int xmos_dev_electric_i2c_read_reg(int xmos_d,
                                 unsigned char device_addr,
                                 unsigned char reg_addr,
                                 unsigned char *data)

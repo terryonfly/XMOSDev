@@ -3,8 +3,7 @@
 #include <unistd.h>
 
 #include "xmosd.h"
-
-struct xmos_dev *xmos_dd;
+#include "rokid_xmos.h"
 
 unsigned char led_pack_buf[1024];
 int led_pack_index = 0;
@@ -17,7 +16,7 @@ int preprocess(void)
 {
     int fd = 0;
     int r;
-    xmos_dd = xmos_dev_open(&r);
+    fd = xmos_dev_open(&r);
     printf("dev open success.\n");
     return fd;
 }
@@ -49,7 +48,7 @@ int process_ammeter(int fd, int hubfd)
 
 /* process xmosd_amp connection */
 
-void amp_data_decode(unsigned char *buf, int len)
+void amp_data_decode(int hubfd, unsigned char *buf, int len)
 {
     int i;
     for (i = 0; i < len; i ++) {
@@ -60,7 +59,7 @@ void amp_data_decode(unsigned char *buf, int len)
         } else if (buf[i] == 0x82 && (i + 1) < len) {
             i ++;
             if (amp_pack_index == 1)
-                xmos_dev_codec_setting_eq(xmos_dd, amp_pack_buf[0]);
+                xmos_dev_codec_setting_eq(hubfd, amp_pack_buf[0]);
             amp_pack_index = 0;
             continue;
         } else if (buf[i] == 0x80 && (i + 1) < len) {
@@ -92,7 +91,7 @@ int process_amp(int fd, int hubfd)
             printf("%d closed\n", fd);
             return 0;
         } else {	/* Process data */
-            amp_data_decode(buf, num);
+            amp_data_decode(hubfd, buf, num);
 //            printf("%s %d\n", buf, num);
         }
     } while(0);
@@ -104,7 +103,7 @@ int process_amp(int fd, int hubfd)
 
 /* process xmosd_len connection */
 
-void led_data_decode(unsigned char *buf, int len)
+void led_data_decode(int hubfd, unsigned char *buf, int len)
 {
     int i;
     for (i = 0; i < len; i ++) {
@@ -114,7 +113,7 @@ void led_data_decode(unsigned char *buf, int len)
             continue;
         } else if (buf[i] == 0x82 && (i + 1) < len) {
             i ++;
-            xmos_dev_led_flush_frame(xmos_dd, led_pack_buf, led_pack_index);
+            xmos_dev_led_flush_frame(hubfd, led_pack_buf, led_pack_index);
             led_pack_index = 0;
             continue;
         } else if (buf[i] == 0x80 && (i + 1) < len) {
@@ -146,7 +145,7 @@ int process_led(int fd, int hubfd)
             printf("%d closed\n", fd);
             return 0;
         } else {	/* Process data */
-            led_data_decode(buf, num);
+            led_data_decode(hubfd, buf, num);
 //            printf("%s %d\n", buf, num);
         }
     } while(0);

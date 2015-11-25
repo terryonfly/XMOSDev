@@ -26,18 +26,16 @@ enum rokid_xmos_error {
 	ROKID_XMOS_ERROR_DEVICE_OPEN_FAILED = -207,
 };
 
-struct xmos_dev;
+int xmos_dev_open();
 
-struct xmos_dev *xmos_dev_open();
+void xmos_dev_close(int xmos_d);
 
-void xmos_dev_close(struct xmos_dev *xmos_d);
-
-int xmos_dev_read(struct xmos_dev *xmos_d,
+int xmos_dev_read(int xmos_d,
 				  unsigned char *data,
 				  int data_len,
 				  int *actual);
 
-int xmos_dev_write(struct xmos_dev *xmos_d,
+int xmos_dev_write(int xmos_d,
 				   unsigned char order,
 				   unsigned char *data,
 				   int data_len);
@@ -46,7 +44,7 @@ int xmos_dev_write(struct xmos_dev *xmos_d,
  * LED Transfer
  */
 
-int xmos_dev_led_flush_frame(struct xmos_dev *xmos_d,
+int xmos_dev_led_flush_frame(int xmos_d,
 							 unsigned char *data,
 							 int data_len);
 
@@ -54,35 +52,35 @@ int xmos_dev_led_flush_frame(struct xmos_dev *xmos_d,
  * Codec Setting Transfer
  */
 
-int xmos_dev_codec_setting_eq(struct xmos_dev *xmos_d,
+int xmos_dev_codec_setting_eq(int xmos_d,
 							  unsigned char eq);
 
 /*
  * Electric I2C Transfer
  */
 
-int xmos_dev_electric_i2c_write(struct xmos_dev *xmos_d,
+int xmos_dev_electric_i2c_write(int xmos_d,
 							unsigned char device_addr,
 							unsigned char *data,
 							int data_len,
 							int send_stop_bit,
 							int *wrote_len);
 
-int xmos_dev_electric_i2c_read(struct xmos_dev *xmos_d,
+int xmos_dev_electric_i2c_read(int xmos_d,
 						   unsigned char device_addr,
 						   unsigned char data_len,
 						   int send_stop_bit,
 						   unsigned char *readed_data,
 						   int *readed_len);
 
-int xmos_dev_electric_i2c_send_stop_bit(struct xmos_dev *xmos_d);
+int xmos_dev_electric_i2c_send_stop_bit(int xmos_d);
 
-int xmos_dev_electric_i2c_write_reg(struct xmos_dev *xmos_d,
+int xmos_dev_electric_i2c_write_reg(int xmos_d,
 									unsigned char device_addr,
 									unsigned char reg,
 									unsigned char data);
 
-int xmos_dev_electric_i2c_read_reg(struct xmos_dev *xmos_d,
+int xmos_dev_electric_i2c_read_reg(int xmos_d,
 								   unsigned char device_addr,
 								   unsigned char reg_addr,
 								   unsigned char *data);
