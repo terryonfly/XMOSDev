@@ -22,18 +22,10 @@
 int running = 1;
 
 extern struct sock_func *sock_funcs;
-
-struct {
-	int hubfd;
-	int (*func)(int, struct sock_func*);
-} hub_func = {
-		.hubfd = 0,
-		.func = process_hub,
-};
+extern struct hub_func hub_func;
 
 /* TODO: Handler sock_func */
 /* Internal members */
-int hubfd;
 
 #define MAX_EVENTS (3*16)
 struct listen_conns {
@@ -104,6 +96,9 @@ int event_handler(struct sock_func *sfs)
 		exit(-1);
 	}
 
+	if (hub_func.hubfd)
+		watch_listen(efd, hub_func.hubfd);
+
 	sf = sfs;
 	while (sf->fd > 0) {
 		watch_listen(efd, sf->fd);
@@ -125,6 +120,18 @@ int event_handler(struct sock_func *sfs)
 		for (n = 0; n < nfds; ++n) {
 			struct listen_conns *lc;
 
+			if(events[n].events & EPOLLHUP) { /* connection HUP */
+				struct epoll_event ev;
+
+				epoll_ctl(efd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
+				close(lc->connsfd);
+
+				/* delete a record */
+				lc->listenfd = -1;
+				lc->connsfd = -1;
+				continue;
+			}
+
 			sf = sfs;
 			while (sf->fd > 0) {
 				if (events[n].data.fd == sf->fd)
@@ -136,7 +143,7 @@ int event_handler(struct sock_func *sfs)
 				conn = watch_conn(efd, sf->fd);
 
 				/* add a record */
-				lc = &lcs;
+				lc = (struct listen_conns *)&lcs;
 				while (lc->listenfd > 0)
 					lc++;
 				lc->listenfd = sf->fd;
@@ -144,11 +151,11 @@ int event_handler(struct sock_func *sfs)
 			} else { /* connection */
 				int status;
 
-				if (events[n].data.fd == hubfd) {
-					hub_func.func(hubfd, sfs);
+				if (events[n].data.fd == hub_func.hubfd) {
+					hub_func.func(hub_func.hubfd, sfs);
 					continue;
 				} else {
-					lc = &lcs;
+					lc = (struct listen_conns *)&lcs;
 					while (lc->connsfd != events[n].data.fd)
 						lc++;
 
@@ -156,19 +163,15 @@ int event_handler(struct sock_func *sfs)
 					while (sf->fd != lc->listenfd)
 						sf++;
 
-					status = sf->func(lc->connsfd, hubfd);
+					status = sf->func(lc->connsfd, hub_func.hubfd);
 
-					if (status == 0) { /* connect closed */
-						struct epoll_event ev;
-
-						epoll_ctl(efd, EPOLL_CTL_DEL, lc->connsfd, &ev);
-						/* delete a record */
-						lc->listenfd = 0;
-						lc->connsfd = 0;
+					if (status == 0) { /* file descriptor closed */
+						printf("status %d\n", status);
+					} else if (status < 0) { /* if EAGAIN as non-block */
+						printf("%d status %d\n", lc->connsfd, status);
 					}
 				}
 			}
-
 		}
 	}
 
@@ -178,24 +181,24 @@ int event_handler(struct sock_func *sfs)
 #ifdef ANDROID
 int main(void)
 {
-	int i;
+	struct sock_func *sf;
 
 	ALOGI("Xmosd started");
 
-	hubfd = preprocess();
-	if (hubfd < 0) {
+	hub_func.hubfd = preprocess();
+	if (hub_func.hubfd < 0) {
 		ALOGE("preprocess failed");
 		return -1;
 	}
 
-	i = 0;
-	while (sock_funcs[i].socket) {
-		sock_funcs[i].fd = android_get_control_socket(sock_funcs[i].socket);
-		if (listen(sock_funcs[i].fd, 4) < 0) {
+	sf = &sock_funcs;
+	while (sf->socket) {
+		sf->fd = android_get_control_socket(sf->socket);
+		if (listen(sf->fd, 4) < 0) {
 			perror("listen");
 			return -1;
 		}
-		i++;
+		sf++;
 	}
 
 	event_handler(sock_funcs);
@@ -246,11 +249,11 @@ int main(void)
 	struct sock_func *sf;
 
 	hub_func.hubfd = preprocess();
-	if (hubfd < 0) {
+	if (hub_func.hubfd < 0) {
 		return -1;
 	}
 
-	sf = &sock_funcs;
+	sf = (struct sock_func *)&sock_funcs;
 	while (sf->socket) {
 		snprintf(spath, sizeof(spath), "/tmp/%s", sf->socket);
 		sf->fd = create_socket(spath);
@@ -261,7 +264,7 @@ int main(void)
 		sf++;
 	}
 
-	event_handler(&sock_funcs);
+	event_handler((struct sock_func *)&sock_funcs);
 
 	return 0;
 }

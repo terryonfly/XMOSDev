@@ -47,36 +47,38 @@ void test_i2c_write(struct xmos_dev *xmos_d) {
     r = xmos_dev_electric_i2c_write(xmos_d, test_dev_addr, test_i2c_dat, test_i2c_len, test_send_stop_bit, &test_wrote_len);
 }
 
-//int main(int argc, char **argv)
-//{
-//	printf("now alive!\n");
-//
-//	int r;
-//	xmos_dd = xmos_dev_open(&r);
-//	printf("dev open success.\n");
-//
-//	int k = 0;
-//	while (running) {
-//		unsigned char *one_frame = (unsigned char *)malloc(LED_COUNT * 3);
-//		int i;
-//		for (i = 0; i < LED_COUNT * 3; i ++) {
-//			if (i / 3 == k) {
-//				if (i % 3 == 0) one_frame[i] = 0xff;
-//				if (i % 3 == 1) one_frame[i] = 0xff;
-//				if (i % 3 == 2) one_frame[i] = 0x00;
-//			} else {
-//				if (i % 3 == 0) one_frame[i] = 0x00;
-//				if (i % 3 == 1) one_frame[i] = 0x00;
-//				if (i % 3 == 2) one_frame[i] = 0x00;
-//
-//			}
-//		}
-//		k ++;
-//		if (k >= LED_COUNT) k = 0;
-//
-//		r = xmos_dev_led_flush_frame(xmos_dd, one_frame, LED_COUNT * 3);
-//		usleep(17*1000);
-//	}
-//
-//	return 0;
-//}
+//*
+int main(int argc, char **argv)
+{
+	printf("now alive!\n");
+
+	int r;
+	xmos_dd = xmos_dev_open(&r);
+	printf("dev open success.\n");
+
+	int k = 0;
+	while (running) {
+		unsigned char *one_frame = (unsigned char *)malloc(LED_COUNT * 3);
+		int i;
+		for (i = 0; i < LED_COUNT * 3; i ++) {
+			if (i / 3 == k) {
+				if (i % 3 == 0) one_frame[i] = 0xff;
+				if (i % 3 == 1) one_frame[i] = 0xff;
+				if (i % 3 == 2) one_frame[i] = 0x00;
+			} else {
+				if (i % 3 == 0) one_frame[i] = 0x00;
+				if (i % 3 == 1) one_frame[i] = 0x00;
+				if (i % 3 == 2) one_frame[i] = 0x00;
+
+			}
+		}
+		k ++;
+		if (k >= LED_COUNT) k = 0;
+
+		r = xmos_dev_led_flush_frame(xmos_dd, one_frame, LED_COUNT * 3);
+		usleep(17*1000);
+	}
+
+	return 0;
+}
+//*/

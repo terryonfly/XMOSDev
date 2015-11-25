@@ -15,10 +15,11 @@ struct sock_func {
     int fd;
 };
 
+struct hub_func {
+    int hubfd;
+    int (*func)(int, struct sock_func*);
+};
+
 int preprocess(void);
-int process_led(int fd, int hubfd);
-int process_amp(int fd, int hubfd);
-int process_ammeter(int fd, int hubfd);
-int process_hub(int, struct sock_func *);
 
 #endif
