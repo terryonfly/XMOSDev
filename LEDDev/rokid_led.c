@@ -24,7 +24,7 @@
 
 #define offsetof(TYPE, MEMBER) ((int)&((TYPE *)0)->MEMBER)
 
-char *sock_addr = "/tmp/xmosd_led";
+char *sock_addr = "/dev/socket/xmosd_led";
 
 typedef struct led_dev {
     int fd_led;
