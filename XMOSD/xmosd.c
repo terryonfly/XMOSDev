@@ -39,6 +39,7 @@ int process_amp(int fd, int hubfd)
 {
     char buf[64*1024];
     int num;
+    int i;
 
     memset(buf, 0, sizeof(buf));
 
@@ -55,7 +56,10 @@ int process_amp(int fd, int hubfd)
             printf("%d closed", fd);
             close(fd);
         } else {	/* Process data */
-            printf("amp: %02x %d\n", buf, num);
+            for (i = 0; i < num; i ++)
+                printf("%02x ", buf[i]);
+            printf("\n");
+            printf("amp: %s %d\n", buf, num);
         }
     } while(0);
 
