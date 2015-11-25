@@ -10,6 +10,7 @@
 #include <cutils/log.h>
 #define printf ALOGV
 #else
+#include <signal.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
