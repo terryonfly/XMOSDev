@@ -109,7 +109,7 @@ int xmos_dev_led_flush_frame(int xmos_d,
                              unsigned char *data,
                              int data_len)
 {
-	if (data_len != FRAME_LEN) return ROKID_XMOS_ERROR_FRAME_LEN;
+	if (data_len > FRAME_LEN) return ROKID_XMOS_ERROR_FRAME_LEN;
 	return xmos_dev_write(xmos_d, ORDER_LED_FLUSH_FRAME, data, data_len);
 }
 

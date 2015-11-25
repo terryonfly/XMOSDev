@@ -8,7 +8,6 @@
  * base on events loop
  */
 
-
 struct sock_func {
     char *socket;
     int (*func)(int, int);
