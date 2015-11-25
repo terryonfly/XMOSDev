@@ -32,7 +32,9 @@
 
 typedef struct xmos_dev {
 	int fd_xmos;
-	unsigned char *xmos_write_data;
+    unsigned char *xmos_write_data;
+    unsigned char *socket_led_read_data;
+    unsigned char *socket_amp_read_data;
 	unsigned char *i2c_data;
 } xmos_dev;
 
@@ -59,6 +61,10 @@ struct xmos_dev *xmos_dev_open()
 	xmos_d->fd_xmos = fd_xmos;
 	int xmos_write_data_len = HEADER_LEN + FRAME_LEN * 2 + FOOTER_LEN;
 	xmos_d->xmos_write_data = (unsigned char *)malloc(xmos_write_data_len);
+    int socket_led_read_data_len = HEADER_LEN + FRAME_LEN * 2 + FOOTER_LEN;
+    xmos_d->socket_led_read_data = (unsigned char *)malloc(socket_led_read_data_len);
+    int socket_amp_read_data_len = HEADER_LEN + 2 + FOOTER_LEN;
+    xmos_d->socket_amp_read_data = (unsigned char *)malloc(socket_amp_read_data_len);
 	xmos_d->i2c_data = (unsigned char *)malloc(512);
 	return xmos_d;
 }

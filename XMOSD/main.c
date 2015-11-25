@@ -23,6 +23,42 @@ struct xmos_dev *xmos_dd;
 
 int running = 1;
 
+int preprocess(void)
+{
+	return 0;
+}
+
+/* process xmosd_amp connection */
+int process_amp(int fd)
+{
+	char buf[64*1024];
+	int num;
+
+	memset(buf, 0, sizeof(buf));
+
+	do {
+		num = read(fd, buf, sizeof(buf));
+		if (num < 0) {
+			if (errno != EAGAIN) {
+				close(fd);
+				perror("read");
+				return -1;
+			}
+			break;
+		} else if (num == 0) {
+			printf("%d closed", fd);
+			close(fd);
+		} else {	/* Process data */
+			printf("amp: %s %d\n", buf, num);
+		}
+	} while(0);
+
+
+	return 0;
+
+}
+
+/* process xmosd_len connection */
 int process_led(int fd)
 {
 	char buf[64*1024];
@@ -30,7 +66,7 @@ int process_led(int fd)
 
 	memset(buf, 0, sizeof(buf));
 
-	while (1) {
+	do {
 		num = read(fd, buf, sizeof(buf));
 		if (num < 0) {
 			if (errno != EAGAIN) {
@@ -45,70 +81,122 @@ int process_led(int fd)
 		} else {	/* Process data */
 			printf("%s %d\n", buf, num);
 		}
+	} while(0);
+
+	return 0;
+}
+
+
+/* TODO: Handler sock_func */
+/* Internal members */
+int socket_led, socket_ammeter, socket_amp;
+#define MAX_EVENTS (3*16)
+struct fd_func {
+	int fd;
+	int (*func)(int fd);
+};
+
+int watch_listen(int epollfd, int listenfd)
+{
+	int flag;
+	struct epoll_event ev;
+
+	flag = fcntl(socket_led, F_GETFL, 0);
+	fcntl(socket_led, F_SETFL, flag | O_NONBLOCK);
+	ev.events = EPOLLIN;
+	ev.data.fd = listenfd;
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, listenfd, &ev) == -1) {
+		perror("epoll_ctl: socket_led");
+		exit(-1);
 	}
 
 	return 0;
 }
 
-int socket_led, socket_ammeter, socket_amp;
-#define MAX_EVENTS (3*16)
+int watch_conn(int epollfd, int listenfd)
+{
+	struct sockaddr local;
+	socklen_t addrlen;
+	int conn;
+	struct epoll_event ev;
+	int flag;
+
+
+	memset(&local, 0, sizeof(local));
+	memset(&addrlen, 0, sizeof(socklen_t));
+	conn = accept(listenfd, (struct sockaddr *)&local, &addrlen);
+	if (conn == -1) {
+		perror("accept");
+		exit(-1);
+	}
+
+	ev.events = EPOLLIN;
+	ev.data.fd = conn;
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, conn, &ev) == -1) {
+		perror("epoll_ctl");
+		exit(-1);
+	}
+	flag = fcntl(conn, F_GETFL, 0);
+	fcntl(conn, F_SETFL, flag | O_NONBLOCK);
+
+	return conn;
+}
 
 /* event loop */
 int event_handler(void)
 {
-	int efd, listen_sock, conn_sock, nfds;
-	struct epoll_event ev, events[MAX_EVENTS];
-	int flag;
+	int efd,  nfds;
+	int conn;
+	struct epoll_event events[MAX_EVENTS];
+	struct fd_func fd_func[MAX_EVENTS];
 
+
+	memset(fd_func, 0, sizeof(fd_func));
 	efd = epoll_create(256);
 	if (efd == -1) {
 		perror("epoll_create1");
 		exit(-1);
 	}
 
-	flag = fcntl(socket_led, F_GETFL, 0);
-	/* fcntl(socket_led, F_SETFL, flag | O_NONBLOCK); */
-	ev.events = EPOLLIN;
-	ev.data.fd = socket_led;
-	if (epoll_ctl(efd, EPOLL_CTL_ADD, socket_led, &ev) == -1) {
-		perror("epoll_ctl: listen_sock");
-		exit(-1);
-	}
+	watch_listen(efd, socket_led);
+	watch_listen(efd, socket_amp);
 
-	while (running) {
-		int n;
-		struct sockaddr local;
-		socklen_t addrlen;
+	while (1) {
+		int n, i;
 
 		nfds = epoll_wait(efd, events, MAX_EVENTS, -1);
 		if (nfds == -1) {
 			perror("epoll_wait");
 			continue;
-			/* exit(-1); */
+			/* exit(-1); */ /* avoid strace exist */
 		}
 
 		for (n = 0; n < nfds; ++n) {
-
 			if (events[n].data.fd == socket_led) {
-				memset(&local, 0, sizeof(local));
-				memset(&addrlen, 0, sizeof(addrlen));
-				conn_sock = accept(socket_led, (struct sockaddr *)&local, &addrlen);
-				if (conn_sock == -1) {
-					perror("accept");
-					exit(-1);
-				}
+				conn = watch_conn(efd, socket_led);
+				i = 0;
+				while (fd_func[i].fd)
+					i++;
 
-				ev.events = EPOLLIN;
-				ev.data.fd = conn_sock;
-				if (epoll_ctl(efd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
-					perror("epoll_ctl");
-					exit(-1);
-				}
-				flag = fcntl(conn_sock, F_GETFL, 0);
-				/* fcntl(conn_sock, F_SETFL, flag | O_NONBLOCK); */
+				fd_func[i].fd = conn;
+				fd_func[i].func = process_led;
+			} else if (events[n].data.fd == socket_amp) {
+				conn = watch_conn(efd, socket_amp);
+				i = 0;
+				while (fd_func[i].fd)
+					i++;
+
+				fd_func[i].fd = conn;
+				fd_func[i].func = process_amp;
 			} else {
-				/* process data */
-				process_led(events[n].data.fd);
+				/* process connection */
+				int i;
+
+				for (i=0; i<MAX_EVENTS; i++)
+					if (fd_func[i].fd == events[n].data.fd)
+						fd_func[i].func(fd_func[i].fd);
+				/* something else */
+				/* TODO: Should callback close fd */
 			}
 		}
 	}
@@ -170,41 +258,34 @@ int main(void)
 
 	return 0;
 }
+
 #else
 int create_socket(char *name)
 {
 	struct sockaddr_un addr;
-	int fd, ret;
+	int fd;
+
 
 	fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (fd < 0) {
 		perror("socket");
 	}
 
-	memset (&addr, 0, sizeof(addr));
+	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", name);
 	unlink(addr.sun_path);
 
-	ret = bind(fd, (struct sockaddr *)&addr, sizeof(addr));
+	if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		perror("bind");
+		return -1;
+	}
 
 	return fd;
 }
 
-void cs(int n)
-{
-	running = 0;
-	xmos_dev_close(xmos_dd);
-	printf("now dowm!\n");
-	exit(0);
-}
-
 int main(void)
 {
-	printf("now alive!\n");
-	signal(SIGINT, cs);  //ctrl+c
-	signal(SIGTERM, cs);  //kill
-
 	socket_led = create_socket("/tmp/xmosd_led");
 	socket_ammeter =  create_socket("/tmp/xmosd_ammeter");
 	socket_amp = create_socket("/tmp/xmosd_amp");
