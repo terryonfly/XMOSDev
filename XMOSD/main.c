@@ -126,6 +126,10 @@ int event_handler(struct sock_func *sfs)
 				epoll_ctl(efd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
 				close(lc->connsfd);
 
+				lc = (struct listen_conns *)&lcs;
+				while (lc->connsfd != events[n].data.fd)
+					lc++;
+
 				/* delete a record */
 				lc->listenfd = -1;
 				lc->connsfd = -1;
