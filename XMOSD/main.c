@@ -181,8 +181,6 @@ int event_handler(struct sock_func *sfs)
 #ifdef ANDROID
 int main(void)
 {
-	preprocess();
-
 	struct sock_func *sf;
 
 	ALOGI("Xmosd started");
@@ -245,8 +243,6 @@ int main(void)
 
 	signal(SIGINT, cs);  //ctrl+c
 	signal(SIGTERM, cs);  //kill
-
-	preprocess();
 
 	char spath[1024] = {0};
 	struct sock_func *sf;
