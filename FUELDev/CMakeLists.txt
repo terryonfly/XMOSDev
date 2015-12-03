@@ -3,5 +3,5 @@ project(FUELDev)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES main.cpp rokid_fuel.h rokid_fuel.c)
-add_executable(FUELDev ${SOURCE_FILES})
+set(SOURCE_FILES main.cpp)
+add_executable(FUELDev ${SOURCE_FILES} rokid_fuel.h rokid_fuel.c)
