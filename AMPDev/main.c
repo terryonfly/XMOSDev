@@ -25,8 +25,7 @@ int main(int argc, char **argv)
     signal(SIGINT, cs);  //ctrl+c
     signal(SIGTERM, cs);  //kill
 
-    int r;
-    amp_dd = amp_dev_open(&r);
+    amp_dd = amp_dev_open();
 
     int k = 0;
     while (running) {

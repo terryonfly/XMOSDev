@@ -25,8 +25,7 @@ int main(int argc, char **argv)
     signal(SIGINT, cs);  //ctrl+c
     signal(SIGTERM, cs);  //kill
 
-    int r;
-    led_dd = led_dev_open(&r);
+    led_dd = led_dev_open();
 
     int k = 0;
     while (running) {

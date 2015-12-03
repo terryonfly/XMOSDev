@@ -107,8 +107,12 @@ int event_handler(struct sock_func *sfs)
 
 
 	while (running) {
-		int n;
+		/* check_fuel_err_cmd */
+		sf = sfs;
+		check_fuel_err_cmd(sf);
+		/* check_fuel_err_cmd */
 
+		int n;
 		nfds = epoll_wait(efd, events, MAX_EVENTS, -1);
 		if (nfds == -1) {
 			perror("epoll_wait");

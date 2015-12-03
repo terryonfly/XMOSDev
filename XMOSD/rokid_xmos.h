@@ -63,26 +63,17 @@ int xmos_dev_electric_i2c_write(int xmos_d,
 							unsigned char device_addr,
 							unsigned char *data,
 							int data_len,
-							int send_stop_bit,
-							int *wrote_len);
+							int send_stop_bit);
 
 int xmos_dev_electric_i2c_read(int xmos_d,
 						   unsigned char device_addr,
 						   unsigned char data_len,
-						   int send_stop_bit,
-						   unsigned char *readed_data,
-						   int *readed_len);
+						   int send_stop_bit);
 
 int xmos_dev_electric_i2c_send_stop_bit(int xmos_d);
 
-int xmos_dev_electric_i2c_write_reg(int xmos_d,
-									unsigned char device_addr,
-									unsigned char reg,
-									unsigned char data);
+unsigned char check_fuel_command_return();
 
-int xmos_dev_electric_i2c_read_reg(int xmos_d,
-								   unsigned char device_addr,
-								   unsigned char reg_addr,
-								   unsigned char *data);
+int fuel_feedback(int fd, unsigned char *data, int data_len);
 
 #endif
