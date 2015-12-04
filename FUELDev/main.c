@@ -13,7 +13,7 @@ int running = 1;
 // DEMO
 void test_i2c_read_reg(struct fuel_dev *fuel_d) {
     int r;
-    char test_dev_addr = 0x6c;
+    char test_dev_addr = 0x55;
     char test_reg_addr = 0x10;
     unsigned char test_val;
     r = fuel_dev_i2c_read_reg(fuel_d, test_dev_addr, test_reg_addr, &test_val);
@@ -21,7 +21,7 @@ void test_i2c_read_reg(struct fuel_dev *fuel_d) {
 
 void test_i2c_write_reg(struct fuel_dev *fuel_d) {
     int r;
-    char test_dev_addr = 0x6c;
+    char test_dev_addr = 0x55;
     char test_reg_addr = 0x10;
     char test_val = 0x07;
     r = fuel_dev_i2c_write_reg(fuel_d, test_dev_addr, test_reg_addr, test_val);
@@ -29,7 +29,7 @@ void test_i2c_write_reg(struct fuel_dev *fuel_d) {
 
 void test_i2c_read(struct fuel_dev *fuel_d) {
     int r;
-    char test_dev_addr = 0x6c;
+    char test_dev_addr = 0x55;
     int test_send_stop_bit = 1;
     int test_to_read_len = 1;
     int readed_len = 256;
@@ -39,7 +39,7 @@ void test_i2c_read(struct fuel_dev *fuel_d) {
 
 void test_i2c_write(struct fuel_dev *fuel_d) {
     int r;
-    char test_dev_addr = 0x6c;
+    char test_dev_addr = 0x55;
     char test_reg_addr = 0x10;
     char test_val = 0x07;
     int test_send_stop_bit = 1;
