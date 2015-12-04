@@ -294,6 +294,7 @@ void check_fuel_err_cmd(struct sock_func *sfs)
 //            break;
 //        sf++;
 //    }
+    printf("check err\n");
 
     unsigned char err_cmd = check_fuel_command_return();
     if (err_cmd == 0x00) return;
