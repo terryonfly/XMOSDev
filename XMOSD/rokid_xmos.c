@@ -142,6 +142,7 @@ int xmos_dev_electric_i2c_write(int xmos_d,
                             int data_len,
                             int send_stop_bit)
 {
+    printf("xmos_dev_electric_i2c_write\n");
     processing_fuel_command = 0x01;
     time(&processing_fuel_time);
     if (data_len > 251) return ROKID_XMOS_ERROR_FRAME_LEN;
@@ -188,6 +189,7 @@ int xmos_dev_electric_i2c_read(int xmos_d,
                            unsigned char data_len,
                            int send_stop_bit)
 {
+    printf("xmos_dev_electric_i2c_read\n");
     processing_fuel_command = 0x02;
     time(&processing_fuel_time);
     if (data_len > 251) return ROKID_XMOS_ERROR_FRAME_LEN;
@@ -236,6 +238,7 @@ int xmos_dev_electric_i2c_read(int xmos_d,
 
 int xmos_dev_electric_i2c_send_stop_bit(int xmos_d)
 {
+    printf("xmos_dev_electric_i2c_send_stop_bit\n");
     processing_fuel_command = 0x03;
     time(&processing_fuel_time);
     int i2c_data_len = 3;
