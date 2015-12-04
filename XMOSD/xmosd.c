@@ -18,6 +18,10 @@ unsigned char hub_pack_buf[1024];
 int hub_pack_index = 0;
 unsigned char hub_current_order;
 
+int fuel_fd = -1;
+int amp_fd = -1;
+int led_fd = -1;
+
 /* open hubfd */
 int preprocess(void)
 {
@@ -87,6 +91,7 @@ void ammeter_data_decode(int hubfd, unsigned char *buf, int len)
 
 int process_ammeter(int fd, int hubfd)
 {
+    fuel_fd = fd;
     char buf[64*1024];
     int num;
 
@@ -141,6 +146,7 @@ void amp_data_decode(int hubfd, unsigned char *buf, int len)
 
 int process_amp(int fd, int hubfd)
 {
+    amp_fd = fd;
     char buf[64*1024];
     int num;
 
@@ -194,6 +200,7 @@ void led_data_decode(int hubfd, unsigned char *buf, int len)
 
 int process_led(int fd, int hubfd)
 {
+    led_fd = fd;
     char buf[64*1024];
     int num;
 
@@ -231,13 +238,13 @@ void hub_data_decode(struct sock_func *sfs, unsigned char *buf, int len)
             i ++;
 
             if (hub_current_order == 0x03) {
-                sf = sfs;
-                while (sf->fd > 0) {
-                    if (sf->func == process_ammeter)
-                        break;
-                    sf++;
-                }
-                fuel_feedback(sf->fd, hub_pack_buf, hub_pack_index);
+//                sf = sfs;
+//                while (sf->fd > 0) {
+//                    if (sf->func == process_ammeter)
+//                        break;
+//                    sf++;
+//                }
+                fuel_feedback(fuel_fd, hub_pack_buf, hub_pack_index);
             }
 
             hub_pack_index = 0;
@@ -281,12 +288,12 @@ int process_hub(int hubfd, struct sock_func *sfs)
 
 void check_fuel_err_cmd(struct sock_func *sfs)
 {
-    struct sock_func *sf = sfs;
-    while (sf->fd > 0) {
-        if (sf->func == process_ammeter)
-            break;
-        sf++;
-    }
+//    struct sock_func *sf = sfs;
+//    while (sf->fd > 0) {
+//        if (sf->func == process_ammeter)
+//            break;
+//        sf++;
+//    }
 
     unsigned char err_cmd = check_fuel_command_return();
     if (err_cmd == 0x00) return;
@@ -298,7 +305,7 @@ void check_fuel_err_cmd(struct sock_func *sfs)
     err_data[3] = err_cmd;
     err_data[4] = 0x82;
     err_data[5] = 0x82;
-    write(sf->fd, err_data, err_data_len);
+    write(fuel_fd, err_data, err_data_len);
 }
 
 struct sock_func sock_funcs[] = {
