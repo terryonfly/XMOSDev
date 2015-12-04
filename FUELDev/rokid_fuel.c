@@ -114,6 +114,7 @@ int fuel_dev_i2c_write(struct fuel_dev *fuel_d,
     int actual;
     actual = write(fuel_d->fd_fuel, fuel_d->frame_data, frame_data_len);
     if (actual != frame_data_len) return -1;
+    printf("i2c wrote back\n");
     actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
 //    /*
     int k;
