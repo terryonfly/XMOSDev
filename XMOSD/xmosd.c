@@ -32,6 +32,7 @@ int preprocess(void)
 
 void ammeter_command_decode(int hubfd, unsigned char *buf, int len)
 {
+    printf("one command\n");
     if (len < 3) return;
     char dev_addr = buf[1];
     int send_stop_bit;
