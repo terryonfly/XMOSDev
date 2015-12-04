@@ -306,6 +306,7 @@ void check_fuel_err_cmd(struct sock_func *sfs)
     err_data[4] = 0x82;
     err_data[5] = 0x82;
     write(fuel_fd, err_data, err_data_len);
+    printf("**********err***********\n");
 }
 
 struct sock_func sock_funcs[] = {

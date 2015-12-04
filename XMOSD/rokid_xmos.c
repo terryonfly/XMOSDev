@@ -278,7 +278,7 @@ unsigned char check_fuel_command_return()
     if (processing_fuel_command != 0x00) {
         time_t now_time;
         time(&now_time);
-        if (now_time - processing_fuel_time > 2) {
+        if (now_time - processing_fuel_time > 3) {
             unsigned char command = processing_fuel_command;
             processing_fuel_command = 0x00;
             return command;
