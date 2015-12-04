@@ -289,7 +289,7 @@ unsigned char check_fuel_command_return()
 
 int fuel_feedback(int fd, unsigned char *data, int data_len)
 {
-    printf("kb\n");
+    printf("kb = %d\n", data_len);
     int xmos_data_len = HEADER_LEN + data_len * 2 + FOOTER_LEN;
     int index = 0;
     xmos_write_data[index] = ESCAPE_HEADER;
@@ -304,6 +304,7 @@ int fuel_feedback(int fd, unsigned char *data, int data_len)
     int actual;
     int ret;
     actual = write(fd, xmos_write_data, xmos_data_len);
+    printf("kb back = %d\n", actual);
     ret = (actual == xmos_data_len) ? 0 : ROKID_XMOS_ERROR_WRITE_FAILED;
     return ret;
 }
