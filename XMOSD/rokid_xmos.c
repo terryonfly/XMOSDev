@@ -289,6 +289,7 @@ unsigned char check_fuel_command_return()
 
 int fuel_feedback(int fd, unsigned char *data, int data_len)
 {
+    printf("kb\n");
     int xmos_data_len = HEADER_LEN + data_len * 2 + FOOTER_LEN;
     int index = 0;
     xmos_write_data[index] = ESCAPE_HEADER;
