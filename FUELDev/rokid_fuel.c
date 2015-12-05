@@ -114,9 +114,17 @@ int fuel_dev_i2c_write(struct fuel_dev *fuel_d,
     int actual;
     actual = write(fuel_d->fd_fuel, fuel_d->frame_data, frame_data_len);
     if (actual != frame_data_len) return -1;
-    printf("i2c wrote back\n");
-    actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
-    printf("i2c read back %d\n", actual);
+
+    int retry_times = 10;
+    do {
+        actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
+        if (actual == -1) {
+            usleep(200 * 1000);
+        }
+        retry_times --;
+    } while (actual == -1 && retry_times > 0);
+    if (actual == -1) return -1;
+
 //    /*
     int k;
     for (k = 0; k < actual; k ++) {
@@ -178,7 +186,17 @@ int fuel_dev_i2c_read(struct fuel_dev *fuel_d,
     int actual;
     actual = write(fuel_d->fd_fuel, fuel_d->frame_data, frame_data_len);
     if (actual != frame_data_len) return -1;
-    actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
+
+    int retry_times = 10;
+    do {
+        actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
+        if (actual == -1) {
+            usleep(200 * 1000);
+        }
+        retry_times --;
+    } while (actual == -1 && retry_times > 0);
+    if (actual == -1) return -1;
+
     /*
     int k;
     for (k = 0; k < read_actual; k ++) {
@@ -237,7 +255,17 @@ int fuel_dev_i2c_send_stop_bit(struct fuel_dev *fuel_d)
     int actual;
     actual = write(fuel_d->fd_fuel, fuel_d->frame_data, frame_data_len);
     if (actual != frame_data_len) return -1;
-    actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
+
+    int retry_times = 10;
+    do {
+        actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
+        if (actual == -1) {
+            usleep(200 * 1000);
+        }
+        retry_times --;
+    } while (actual == -1 && retry_times > 0);
+    if (actual == -1) return -1;
+
     /*
     int k;
     for (k = 0; k < read_actual; k ++) {
