@@ -231,6 +231,11 @@ int process_led(int fd, int hubfd)
 
 void hub_data_decode(struct sock_func *sfs, unsigned char *buf, int len)
 {
+    printf("hub_data_decode : ");
+    for (int j = 0; j < len; ++j) {
+        printf("%02x ", buf[j]);
+    }
+    printf("\n");
     struct sock_func *sf;
     int i;
     for (i = 0; i < len; i ++) {
