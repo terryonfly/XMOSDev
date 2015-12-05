@@ -29,6 +29,10 @@ int preprocess(void)
     int r;
     fd = xmos_dev_open(&r);
     printf("dev open success.\n");
+
+//    /* check_fuel_err_cmd */
+//    check_fuel_err_cmd();
+//    /* check_fuel_err_cmd */
     return fd;
 }
 
@@ -286,14 +290,8 @@ int process_hub(int hubfd, struct sock_func *sfs)
     return hubfd;
 }
 
-void check_fuel_err_cmd(struct sock_func *sfs)
+void check_fuel_err_cmd()
 {
-//    struct sock_func *sf = sfs;
-//    while (sf->fd > 0) {
-//        if (sf->func == process_ammeter)
-//            break;
-//        sf++;
-//    }
     printf("check err\n");
 
     unsigned char err_cmd = check_fuel_command_return();

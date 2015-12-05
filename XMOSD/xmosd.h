@@ -21,6 +21,6 @@ struct hub_func {
 
 int preprocess(void);
 
-void check_fuel_err_cmd(struct sock_func *sfs);
+void check_fuel_err_cmd();
 
 #endif
