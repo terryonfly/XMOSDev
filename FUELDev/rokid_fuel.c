@@ -40,7 +40,7 @@ struct fuel_dev *fuel_dev_open()
     addr_un.sun_family = AF_UNIX;
     strcpy(addr_un.sun_path, sock_addr);
 
-    if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
+    if ((fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0)) < 0) {
         perror("socket");
         return (struct fuel_dev *)-1;
     }
@@ -116,7 +116,7 @@ int fuel_dev_i2c_write(struct fuel_dev *fuel_d,
     if (actual != frame_data_len) return -1;
     printf("i2c wrote back\n");
     actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
-    printf("i2c read back\n");
+    printf("i2c read back %d\n", actual);
 //    /*
     int k;
     for (k = 0; k < actual; k ++) {
