@@ -30,10 +30,16 @@
 #define ORDER_CODEC_SETTING 0x02
 #define ORDER_ELECTRIC_I2C_RW 0x03
 
-#define FRAME_LEN (3 * LED_COUNT)
+#define FRAME_LEN (3 * (XMOS_LED_COUNT + BACK_LED_COUNT))
+#define BACK_FRAME_LEN (3 * BACK_LED_COUNT)
+
+unsigned char xmos_led_data[1024];
+unsigned char back_led_data[512];
 
 unsigned char xmos_i2c_data[512];
 unsigned char xmos_write_data[1024];
+
+int back_led_fd = -1;
 
 unsigned char processing_fuel_command = 0x00;
 time_t processing_fuel_time = 0;
@@ -56,6 +62,11 @@ int xmos_dev_open()
 		printf("Set parity failed : %d\n", ret);
 		return ROKID_XMOS_ERROR_INIT_FAILED;
 	}
+
+    back_led_fd = open("/dev/dm163",O_RDWR|O_NONBLOCK);
+    if (back_led_fd < 0) {
+        perror("open dm163 error");
+    }
 
 	return fd_xmos;
 }
@@ -115,7 +126,18 @@ int xmos_dev_led_flush_frame(int xmos_d,
                              int data_len)
 {
 	if (data_len > FRAME_LEN) return ROKID_XMOS_ERROR_FRAME_LEN;
-	return xmos_dev_write(xmos_d, ORDER_LED_FLUSH_FRAME, data, data_len);
+    int ret;
+    if (data_len == FRAME_LEN) {
+        ret = xmos_dev_write(xmos_d, ORDER_LED_FLUSH_FRAME, data, (FRAME_LEN - BACK_FRAME_LEN));
+        data += (FRAME_LEN - BACK_FRAME_LEN);
+        ret = write(back_led_fd, data, BACK_FRAME_LEN);
+        if(ret < 0){
+            perror("bak led write error");
+        }
+    } else {
+        ret = xmos_dev_write(xmos_d, ORDER_LED_FLUSH_FRAME, data, data_len);
+    }
+    return ret;
 }
 
 /*
@@ -158,29 +180,6 @@ int xmos_dev_electric_i2c_write(int xmos_d,
     int ret;
     ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
     if (ret != 0) return ret;
-//	int read_actual;
-//    ret = xmos_dev_read(xmos_d, xmos_i2c_data, 512, &read_actual);
-//	/*
-//	int k;
-//	for (k = 0; k < read_actual; k ++) {
-//		printf("%02x ", xmos_i2c_data[k]);
-//	}
-//	printf("\n");
-//	*/
-//	if (read_actual % 2 != 0) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//	if (read_actual < 6) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//	if (xmos_i2c_data[0] != 0x81) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//	if (xmos_i2c_data[1] != 0x03) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//	if (xmos_i2c_data[read_actual - 2] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//	if (xmos_i2c_data[read_actual - 1] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//	if (xmos_i2c_data[2] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//	if (xmos_i2c_data[3] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// order
-//	if (xmos_i2c_data[4] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//    if (xmos_i2c_data[5] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// ack or nack
-//	if (xmos_i2c_data[6] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//    unsigned char i2c_write_bytes = xmos_i2c_data[7];
-//    printf("i2c wrote %d bytes\n", i2c_write_bytes);
-//    *wrote_len = i2c_write_bytes;
     return ret;
 }
 
@@ -203,36 +202,6 @@ int xmos_dev_electric_i2c_read(int xmos_d,
     int ret;
     ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
     if (ret != 0) return ret;
-//    int read_actual;
-//    ret = xmos_dev_read(xmos_d, xmos_i2c_data, 512, &read_actual);
-//    /*
-//    int k;
-//    for (k = 0; k < read_actual; k ++) {
-//        printf("%02x ", xmos_i2c_data[k]);
-//    }
-//    printf("\n");
-//    */
-//    if (read_actual % 2 != 0) return ROKID_XMOS_ERROR_READ_FAILED;
-//    if (read_actual < 6) return ROKID_XMOS_ERROR_READ_FAILED;
-//    if (xmos_i2c_data[0] != 0x81) return ROKID_XMOS_ERROR_READ_FAILED;
-//    if (xmos_i2c_data[1] != 0x03) return ROKID_XMOS_ERROR_READ_FAILED;
-//    if (xmos_i2c_data[read_actual - 2] != 0x82) return ROKID_XMOS_ERROR_READ_FAILED;
-//    if (xmos_i2c_data[read_actual - 1] != 0x82) return ROKID_XMOS_ERROR_READ_FAILED;
-//    if (xmos_i2c_data[2] != 0x80) return ROKID_XMOS_ERROR_READ_FAILED;
-//    if (xmos_i2c_data[3] != 0x02) return ROKID_XMOS_ERROR_READ_FAILED;// order
-//    if (xmos_i2c_data[4] != 0x80) return ROKID_XMOS_ERROR_READ_FAILED;
-//    if (xmos_i2c_data[5] != 0x01) return ROKID_XMOS_ERROR_READ_FAILED;// ack or nack
-//    int readed_i = 0;
-//    printf("i2c readed ");
-//    for (i = 6; i < read_actual - 2; i ++) {
-//        if (xmos_i2c_data[i] != 0x80) return ROKID_XMOS_ERROR_READ_FAILED;
-//        i++;
-//        readed_data[readed_i] = xmos_i2c_data[i];
-//        printf("%02x ", readed_data[readed_i]);
-//        readed_i ++;
-//    }
-//    printf("\n");
-//    *readed_len = readed_i;
     return ret;
 }
 
@@ -249,42 +218,7 @@ int xmos_dev_electric_i2c_send_stop_bit(int xmos_d)
     int ret;
     ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
     if (ret != 0) return ret;
-//    int read_actual;
-//    ret = xmos_dev_read(xmos_d, xmos_i2c_data, 512, &read_actual);
-//    /*
-//    int k;
-//    for (k = 0; k < read_actual; k ++) {
-//        printf("%02x ", xmos_i2c_data[k]);
-//    }
-//    printf("\n");
-//    */
-//    int i;
-//    if (read_actual % 2 != 0) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//    if (read_actual < 6) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//    if (xmos_i2c_data[0] != 0x81) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//    if (xmos_i2c_data[1] != 0x03) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//    if (xmos_i2c_data[read_actual - 2] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//    if (xmos_i2c_data[read_actual - 1] != 0x82) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//    if (xmos_i2c_data[2] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//    if (xmos_i2c_data[3] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// order
-//    if (xmos_i2c_data[4] != 0x80) return ROKID_XMOS_ERROR_WRITE_FAILED;
-//    if (xmos_i2c_data[5] != 0x01) return ROKID_XMOS_ERROR_WRITE_FAILED;// ack or nack
-//    printf("stop_bit sent\n");
     return ret;
-}
-
-unsigned char check_fuel_command_return()
-{
-    if (processing_fuel_command != 0x00) {
-        time_t now_time;
-        time(&now_time);
-        if (now_time - processing_fuel_time > 3) {
-            unsigned char command = processing_fuel_command;
-            processing_fuel_command = 0x00;
-            return command;
-        }
-    }
-    return 0x00;
 }
 
 int fuel_feedback(int fd, unsigned char *data, int data_len)

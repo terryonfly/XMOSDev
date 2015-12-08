@@ -5,7 +5,7 @@
 #ifndef LEDDEV_ROKID_LED_H
 #define LEDDEV_ROKID_LED_H
 
-#define LED_COUNT 8*4
+#define LED_COUNT 8*5
 
 enum rokid_led_error {
     /* Success (no error) */

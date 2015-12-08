@@ -1,7 +1,8 @@
 #ifndef __ROKID_XMOS_H
 #define __ROKID_XMOS_H
 
-#define LED_COUNT 8*5
+#define XMOS_LED_COUNT 8*4
+#define BACK_LED_COUNT 8*1
 
 enum rokid_xmos_error {
 	/* Success (no error) */
@@ -71,8 +72,6 @@ int xmos_dev_electric_i2c_read(int xmos_d,
 						   int send_stop_bit);
 
 int xmos_dev_electric_i2c_send_stop_bit(int xmos_d);
-
-unsigned char check_fuel_command_return();
 
 int fuel_feedback(int fd, unsigned char *data, int data_len);
 

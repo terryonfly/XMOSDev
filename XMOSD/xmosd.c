@@ -296,24 +296,6 @@ int process_hub(int hubfd, struct sock_func *sfs)
     return hubfd;
 }
 
-void check_fuel_err_cmd()
-{
-    printf("check err\n");
-
-    unsigned char err_cmd = check_fuel_command_return();
-    if (err_cmd == 0x00) return;
-    unsigned char err_data[64];
-    size_t err_data_len = 6;
-    err_data[0] = 0x81;
-    err_data[1] = 0x03;
-    err_data[2] = 0x80;
-    err_data[3] = err_cmd;
-    err_data[4] = 0x82;
-    err_data[5] = 0x82;
-    write(fuel_fd, err_data, err_data_len);
-    printf("**********err***********\n");
-}
-
 struct sock_func sock_funcs[] = {
         {
                 .socket = "xmosd_led",

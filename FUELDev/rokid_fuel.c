@@ -23,7 +23,8 @@
 
 #define offsetof(TYPE, MEMBER) ((int)&((TYPE *)0)->MEMBER)
 
-char *sock_addr = "/tmp/xmosd_ammeter";
+//char *sock_addr = "/tmp/xmosd_ammeter";
+char *sock_addr = "/dev/socket/xmosd_ammeter";
 
 unsigned char fuel_i2c_data[512];
 

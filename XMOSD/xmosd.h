@@ -21,6 +21,4 @@ struct hub_func {
 
 int preprocess(void);
 
-void check_fuel_err_cmd();
-
 #endif
