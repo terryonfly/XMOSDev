@@ -80,13 +80,13 @@ int xmos_dev_encode_data(unsigned char *des, int start, unsigned char *src, int 
 {
     int i;
     for (i = 0; i < src_len; i ++) {
-        if (src[i] == 0x00) {
-            des[i * 2 + start] = ESCAPE_DATA_ZERO;
-            des[i * 2 + start + 1] = 0x01;
-        } else {
+//        if (src[i] == 0x00) {
+//            des[i * 2 + start] = ESCAPE_DATA_ZERO;
+//            des[i * 2 + start + 1] = 0x01;
+//        } else {
             des[i * 2 + start] = ESCAPE_DATA;
             des[i * 2 + start + 1] = src[i];
-        }
+//        }
     }
     return 0;
 }
@@ -215,6 +215,20 @@ int xmos_dev_electric_i2c_send_stop_bit(int xmos_d)
     i2c_data[0] = 0x03;// send_stop_bit
     i2c_data[1] = 0x00;// device_addr -> No need
     i2c_data[2] = 0x01;// (send_stop_bit == 0) ? 0x00 : 0x01 -> No need
+    int ret;
+    ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
+    if (ret != 0) return ret;
+    return ret;
+}
+
+int xmos_dev_electric_gpio_chg_stat(int xmos_d)
+{
+    printf("xmos_dev_electric_gpio_chg_stat\n");
+    int i2c_data_len = 3;
+    unsigned char i2c_data[i2c_data_len];
+    i2c_data[0] = 0x03;// send_stop_bit
+    i2c_data[1] = 0x00;// device_addr -> No need
+    i2c_data[2] = 0x00;// (send_stop_bit == 0) ? 0x00 : 0x01 -> No need
     int ret;
     ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
     if (ret != 0) return ret;

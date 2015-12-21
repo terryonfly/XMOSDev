@@ -65,6 +65,9 @@ void ammeter_command_decode(int hubfd, unsigned char *buf, int len)
         case 0x03://send_stop_bit
             xmos_dev_electric_i2c_send_stop_bit(hubfd);
             break;
+        case 0x04://read CHG_STAT gpio
+            xmos_dev_electric_gpio_chg_stat(hubfd);
+            break;
     }
 }
 
@@ -248,12 +251,6 @@ void hub_data_decode(struct sock_func *sfs, unsigned char *buf, int len)
             i ++;
 
             if (hub_current_order == 0x03) {
-//                sf = sfs;
-//                while (sf->fd > 0) {
-//                    if (sf->func == process_ammeter)
-//                        break;
-//                    sf++;
-//                }
                 fuel_feedback(fuel_fd, hub_pack_buf, hub_pack_index);
             }
 

@@ -106,6 +106,8 @@ int fuel_dev_i2c_write(struct fuel_dev *fuel_d,
     fuel_d->frame_data[index] = (send_stop_bit == 0) ? 0x00 : 0x01;// send_stop_bit
     index ++;
     for (i = 0; i < data_len; i ++) {
+        fuel_d->frame_data[index] = ESCAPE_DATA;
+        index ++;
         fuel_d->frame_data[index] = data[i];
         index ++;
     }
@@ -281,7 +283,7 @@ int fuel_dev_i2c_send_stop_bit(struct fuel_dev *fuel_d)
     if (fuel_i2c_data[actual - 2] != 0x82) return -1;
     if (fuel_i2c_data[actual - 1] != 0x82) return -1;
     if (fuel_i2c_data[2] != 0x80) return -1;
-    if (fuel_i2c_data[3] != 0x01) return -1;// order
+    if (fuel_i2c_data[3] != 0x03) return -1;// order
     if (fuel_i2c_data[4] != 0x80) return -1;
     if (fuel_i2c_data[5] != 0x01) return -1;// ack or nack
     printf("stop_bit sent\n");
@@ -328,4 +330,64 @@ int fuel_dev_i2c_read_reg(struct fuel_dev *fuel_d,
     int readed_len = 1;
     r = fuel_dev_i2c_read(fuel_d, device_addr, to_read_len, send_stop_bit, data, &readed_len);
     return r;
+}
+
+int fuel_dev_gpio_chg_stat(struct fuel_dev *fuel_d, int *gpio_val)
+{
+    int frame_data_len = HEADER_LEN + (0 + 3) * 2 + FOOTER_LEN;
+    int index = 0;
+    fuel_d->frame_data[index] = ESCAPE_HEADER;
+    index ++;
+    fuel_d->frame_data[index] = ORDER_FUEL_SETTING;
+    index ++;
+    fuel_d->frame_data[index] = ESCAPE_DATA;
+    index ++;
+    fuel_d->frame_data[index] = 0x04;// get gpio status chg
+    index ++;
+    fuel_d->frame_data[index] = ESCAPE_DATA;
+    index ++;
+    fuel_d->frame_data[index] = 0x00;// device_addr
+    index ++;
+    fuel_d->frame_data[index] = ESCAPE_DATA;
+    index ++;
+    fuel_d->frame_data[index] = 0x00;// send_stop_bit
+    index ++;
+    fuel_d->frame_data[index] = ESCAPE_FOOTER;
+    index ++;
+    fuel_d->frame_data[index] = ESCAPE_FOOTER;
+    int actual;
+    actual = write(fuel_d->fd_fuel, fuel_d->frame_data, frame_data_len);
+    if (actual != frame_data_len) return -1;
+
+    int retry_times = 10;
+    do {
+        actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
+        if (actual == -1) {
+            usleep(200 * 1000);
+        }
+        retry_times --;
+    } while (actual == -1 && retry_times > 0);
+    if (actual == -1) return -1;
+
+    /*
+    int k;
+    for (k = 0; k < read_actual; k ++) {
+        printf("%02x ", fuel_i2c_data[k]);
+    }
+    printf("\n");
+    */
+    if (actual % 2 != 0) return -1;
+    if (actual < 6) return -1;
+    if (fuel_i2c_data[0] != 0x81) return -1;
+    if (fuel_i2c_data[1] != 0x03) return -1;
+    if (fuel_i2c_data[actual - 2] != 0x82) return -1;
+    if (fuel_i2c_data[actual - 1] != 0x82) return -1;
+    if (fuel_i2c_data[2] != 0x80) return -1;
+    if (fuel_i2c_data[3] != 0x04) return -1;// order
+    if (fuel_i2c_data[4] != 0x80) return -1;
+    if (fuel_i2c_data[5] != 0x01) return -1;// ack or nack
+    if (fuel_i2c_data[6] != 0x80) return -1;
+    *gpio_val = fuel_i2c_data[7];
+    printf("got chg_stat = %d\n", gpio_val);
+    return 0;
 }

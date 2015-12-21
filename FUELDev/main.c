@@ -92,6 +92,9 @@ int main(int argc, char **argv)
         }
         usleep(1000 * 1000);
 
+        int CHG_STAT;
+        fuel_dev_gpio_chg_stat(fuel_dd, &CHG_STAT);
+
         k ++;
         if (k >= 4) k = 0;
     }

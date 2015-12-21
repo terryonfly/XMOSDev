@@ -172,6 +172,8 @@ int set_parity(int fd, int databits, int stopbits, int parity)
     opt.c_cc[VTIME] = 0;
     opt.c_cc[VMIN] = 1;
 
+    cfmakeraw(&opt);
+
     if (tcsetattr(fd, TCSANOW, &opt) != 0) {
         perror("setup serial opt failed\n");
         return -1;

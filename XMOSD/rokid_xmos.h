@@ -73,6 +73,8 @@ int xmos_dev_electric_i2c_read(int xmos_d,
 
 int xmos_dev_electric_i2c_send_stop_bit(int xmos_d);
 
+int xmos_dev_electric_gpio_chg_stat(int xmos_d);
+
 int fuel_feedback(int fd, unsigned char *data, int data_len);
 
 #endif

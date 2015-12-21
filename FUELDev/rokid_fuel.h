@@ -37,4 +37,7 @@ int fuel_dev_i2c_read_reg(struct fuel_dev *fuel_d,
                           unsigned char reg_addr,
                           unsigned char *data);
 
+int fuel_dev_gpio_chg_stat(struct fuel_dev *fuel_d,
+                           int *gpio_val);
+
 #endif //AMPDEV_ROKID_AMP_H
