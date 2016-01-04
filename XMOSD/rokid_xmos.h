@@ -39,7 +39,7 @@ int xmos_dev_read(int xmos_d,
 int xmos_dev_write(int xmos_d,
 				   unsigned char order,
 				   unsigned char *data,
-				   int data_len);
+				   int data_len, int retry_times);
 
 /*
  * LED Transfer
@@ -72,6 +72,8 @@ int xmos_dev_electric_i2c_read(int xmos_d,
 						   int send_stop_bit);
 
 int xmos_dev_electric_i2c_send_stop_bit(int xmos_d);
+
+unsigned char check_fuel_command_return();
 
 int xmos_dev_electric_gpio_chg_stat(int xmos_d);
 

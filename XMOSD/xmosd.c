@@ -295,16 +295,16 @@ int process_hub(int hubfd, struct sock_func *sfs)
 
 struct sock_func sock_funcs[] = {
         {
-                .socket = "xmosd_led",
-                .func = process_led,
-        },
-        {
                 .socket = "xmosd_amp",
                 .func = process_amp,
         },
         {
                 .socket = "xmosd_ammeter",
                 .func = process_ammeter,
+        },
+        {
+                .socket = "xmosd_led",
+                .func = process_led,
         },
         {NULL, NULL, 0},
 };

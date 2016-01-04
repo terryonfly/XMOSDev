@@ -33,16 +33,10 @@
 #define FRAME_LEN (3 * (XMOS_LED_COUNT + BACK_LED_COUNT))
 #define BACK_FRAME_LEN (3 * BACK_LED_COUNT)
 
-unsigned char xmos_led_data[1024];
-unsigned char back_led_data[512];
-
 unsigned char xmos_i2c_data[512];
 unsigned char xmos_write_data[1024];
 
 int back_led_fd = -1;
-
-unsigned char processing_fuel_command = 0x00;
-time_t processing_fuel_time = 0;
 
 int xmos_dev_open()
 {
@@ -63,10 +57,10 @@ int xmos_dev_open()
 		return ROKID_XMOS_ERROR_INIT_FAILED;
 	}
 
-    back_led_fd = open("/dev/dm163",O_RDWR|O_NONBLOCK);
-    if (back_led_fd < 0) {
-        perror("open dm163 error");
-    }
+	back_led_fd = open("/dev/dm163", O_RDWR | O_NONBLOCK);
+	if (back_led_fd < 0) {
+		perror("open dm163 error");
+	}
 
 	return fd_xmos;
 }
@@ -80,13 +74,13 @@ int xmos_dev_encode_data(unsigned char *des, int start, unsigned char *src, int 
 {
     int i;
     for (i = 0; i < src_len; i ++) {
-//        if (src[i] == 0x00) {
-//            des[i * 2 + start] = ESCAPE_DATA_ZERO;
-//            des[i * 2 + start + 1] = 0x01;
-//        } else {
+        //if (src[i] == 0x00) {
+        //    des[i * 2 + start] = ESCAPE_DATA_ZERO;
+        //    des[i * 2 + start + 1] = 0x01;
+        //} else {
             des[i * 2 + start] = ESCAPE_DATA;
             des[i * 2 + start + 1] = src[i];
-//        }
+        //}
     }
     return 0;
 }
@@ -97,7 +91,7 @@ int xmos_dev_read(int xmos_d, unsigned char *data, int data_len, int *actual)
     return 0;
 }
 
-int xmos_dev_write(int xmos_d, unsigned char order, unsigned char *data, int data_len)
+int xmos_dev_write(int xmos_d, unsigned char order, unsigned char *data, int data_len, int retry_times)
 {
     int xmos_data_len = HEADER_LEN + data_len * 2 + FOOTER_LEN;
     int index = 0;
@@ -112,7 +106,11 @@ int xmos_dev_write(int xmos_d, unsigned char order, unsigned char *data, int dat
     xmos_write_data[index] = ESCAPE_FOOTER;
     int actual;
     int ret;
-    actual = write(xmos_d, xmos_write_data, xmos_data_len);
+    do {
+        actual = write(xmos_d, xmos_write_data, xmos_data_len);
+        if (actual == -1) usleep(50 * 1000);
+	retry_times --;
+    } while (actual == -1 && errno == EAGAIN && retry_times >= 0);
     ret = (actual == xmos_data_len) ? 0 : ROKID_XMOS_ERROR_WRITE_FAILED;
     return ret;
 }
@@ -126,18 +124,18 @@ int xmos_dev_led_flush_frame(int xmos_d,
                              int data_len)
 {
 	if (data_len > FRAME_LEN) return ROKID_XMOS_ERROR_FRAME_LEN;
-    int ret;
-    if (data_len == FRAME_LEN) {
-        ret = xmos_dev_write(xmos_d, ORDER_LED_FLUSH_FRAME, data, (FRAME_LEN - BACK_FRAME_LEN));
-        data += (FRAME_LEN - BACK_FRAME_LEN);
-        ret = write(back_led_fd, data, BACK_FRAME_LEN);
-        if(ret < 0){
-            perror("bak led write error");
-        }
-    } else {
-        ret = xmos_dev_write(xmos_d, ORDER_LED_FLUSH_FRAME, data, data_len);
-    }
-    return ret;
+	int ret;
+	if (data_len == FRAME_LEN) {
+		ret = xmos_dev_write(xmos_d, ORDER_LED_FLUSH_FRAME, data, (FRAME_LEN - BACK_FRAME_LEN), 0);
+		data += (FRAME_LEN - BACK_FRAME_LEN);
+		ret = write(back_led_fd, data, BACK_FRAME_LEN);
+		if (ret < 0) {
+			perror("back led write error");
+		}
+	} else {
+		ret = xmos_dev_write(xmos_d, ORDER_LED_FLUSH_FRAME, data, data_len, 0);
+	}
+	return ret;
 }
 
 /*
@@ -151,7 +149,7 @@ int xmos_dev_codec_setting_eq(int xmos_d,
     // eq = 0x01 -> EFFECT_TYPE_TTS
     int data_len = 2;
     unsigned char data[2] = {0x01, eq};
-    return xmos_dev_write(xmos_d, ORDER_CODEC_SETTING, data, data_len);
+    return xmos_dev_write(xmos_d, ORDER_CODEC_SETTING, data, data_len, 20);
 }
 
 /*
@@ -164,9 +162,6 @@ int xmos_dev_electric_i2c_write(int xmos_d,
                             int data_len,
                             int send_stop_bit)
 {
-    printf("xmos_dev_electric_i2c_write\n");
-    processing_fuel_command = 0x01;
-    time(&processing_fuel_time);
     if (data_len > 251) return ROKID_XMOS_ERROR_FRAME_LEN;
     int i;
     int i2c_data_len = data_len + 3;
@@ -178,7 +173,7 @@ int xmos_dev_electric_i2c_write(int xmos_d,
         i2c_data[i + 3] = data[i];
     }
     int ret;
-    ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
+    ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len, 80);
     if (ret != 0) return ret;
     return ret;
 }
@@ -188,9 +183,6 @@ int xmos_dev_electric_i2c_read(int xmos_d,
                            unsigned char data_len,
                            int send_stop_bit)
 {
-    printf("xmos_dev_electric_i2c_read\n");
-    processing_fuel_command = 0x02;
-    time(&processing_fuel_time);
     if (data_len > 251) return ROKID_XMOS_ERROR_FRAME_LEN;
     int i;
     int i2c_data_len = 4;
@@ -200,37 +192,33 @@ int xmos_dev_electric_i2c_read(int xmos_d,
     i2c_data[2] = (send_stop_bit == 0) ? 0x00 : 0x01;
     i2c_data[3] = data_len;
     int ret;
-    ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
+    ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len, 80);
     if (ret != 0) return ret;
     return ret;
 }
 
 int xmos_dev_electric_i2c_send_stop_bit(int xmos_d)
 {
-    printf("xmos_dev_electric_i2c_send_stop_bit\n");
-    processing_fuel_command = 0x03;
-    time(&processing_fuel_time);
     int i2c_data_len = 3;
     unsigned char i2c_data[i2c_data_len];
     i2c_data[0] = 0x03;// send_stop_bit
     i2c_data[1] = 0x00;// device_addr -> No need
     i2c_data[2] = 0x01;// (send_stop_bit == 0) ? 0x00 : 0x01 -> No need
     int ret;
-    ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
+    ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len, 80);
     if (ret != 0) return ret;
     return ret;
 }
 
 int xmos_dev_electric_gpio_chg_stat(int xmos_d)
 {
-    printf("xmos_dev_electric_gpio_chg_stat\n");
     int i2c_data_len = 3;
     unsigned char i2c_data[i2c_data_len];
-    i2c_data[0] = 0x03;// send_stop_bit
+    i2c_data[0] = 0x04;// send_stop_bit
     i2c_data[1] = 0x00;// device_addr -> No need
     i2c_data[2] = 0x00;// (send_stop_bit == 0) ? 0x00 : 0x01 -> No need
     int ret;
-    ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len);
+    ret = xmos_dev_write(xmos_d, ORDER_ELECTRIC_I2C_RW, i2c_data, i2c_data_len, 80);
     if (ret != 0) return ret;
     return ret;
 }
