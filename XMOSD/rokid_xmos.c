@@ -119,8 +119,8 @@ int xmos_dev_write(int xmos_d, unsigned char order, unsigned char *data, int dat
 
 void xmos_dev_write_group(int xmos_d, unsigned char *data, int data_len)
 {
-    // timer stop
-    ualarm(0, 0);
+//    // timer stop
+//    ualarm(0, 0);
     xmos_d_for_group = xmos_d;
     int i;
     for (i = 0; i < data_len; i ++) {
@@ -130,11 +130,11 @@ void xmos_dev_write_group(int xmos_d, unsigned char *data, int data_len)
             xmos_write_data_group_index = 0;
         }
     }
-    if (xmos_write_data_group_index > 0) {
-        // timer start
-        ualarm(5000, 0);
-        signal(SIGALRM, xmos_dev_write_group_no_wait);
-    }
+//    if (xmos_write_data_group_index > 0) {
+//        // timer start
+//        ualarm(5000, 0);
+//        signal(SIGALRM, xmos_dev_write_group_no_wait);
+//    }
 }
 
 void xmos_dev_write_group_no_wait()
