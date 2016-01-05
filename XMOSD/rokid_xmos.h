@@ -39,7 +39,7 @@ int xmos_dev_read(int xmos_d,
 int xmos_dev_write(int xmos_d,
 				   unsigned char order,
 				   unsigned char *data,
-				   int data_len, int retry_times);
+				   int data_len);
 
 /*
  * LED Transfer
