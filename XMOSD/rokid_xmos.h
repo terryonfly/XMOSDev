@@ -41,6 +41,12 @@ int xmos_dev_write(int xmos_d,
 				   unsigned char *data,
 				   int data_len);
 
+void xmos_dev_write_group(int xmos_d, unsigned char *data, int data_len);
+
+void xmos_dev_write_group_no_wait();
+
+void xmos_dev_write_current_data(int retry_times);
+
 /*
  * LED Transfer
  */
