@@ -15,15 +15,17 @@
 #include "uart.h"
 #include "rokid_xmos.h"
 
+#ifdef ANDROID
+#define SERIAL_DEV "/dev/tty.usbmodem14235"
+#else
 #define SERIAL_DEV "/dev/ttyACM0"
-//#define SERIAL_DEV "/dev/tty.usbmodem14235"
+#endif
 
 #define HEADER_LEN 2
 #define FOOTER_LEN 2
 
 #define ESCAPE_HEADER 0x81
 #define ESCAPE_DATA 0x80
-#define ESCAPE_DATA_ZERO 0x83
 #define ESCAPE_FOOTER 0x82
 
 #define ORDER_LED_FLUSH_FRAME 0x01
@@ -128,7 +130,9 @@ int xmos_dev_led_flush_frame(int xmos_d,
 	if (data_len == FRAME_LEN) {
 		ret = xmos_dev_write(xmos_d, ORDER_LED_FLUSH_FRAME, data, (FRAME_LEN - BACK_FRAME_LEN), 0);
 		data += (FRAME_LEN - BACK_FRAME_LEN);
+#ifdef ANDROID
 		ret = write(back_led_fd, data, BACK_FRAME_LEN);
+#endif
 		if (ret < 0) {
 			perror("back led write error");
 		}
