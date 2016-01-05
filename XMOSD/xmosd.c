@@ -102,7 +102,7 @@ int process_ammeter(int fd, int hubfd)
     char buf[64*1024];
     int num;
 
-    printf("%s\n", __func__);
+//    printf("%s\n", __func__);
 
     memset(buf, 0, sizeof(buf));
 
@@ -157,7 +157,7 @@ int process_amp(int fd, int hubfd)
     char buf[64*1024];
     int num;
 
-    printf("%s\n", __func__);
+//    printf("%s\n", __func__);
 
     memset(buf, 0, sizeof(buf));
 
@@ -211,7 +211,7 @@ int process_led(int fd, int hubfd)
     char buf[64*1024];
     int num;
 
-    printf("%s\n", __func__);
+//    printf("%s\n", __func__);
 
     memset(buf, 0, sizeof(buf));
 
