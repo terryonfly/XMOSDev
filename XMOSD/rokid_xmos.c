@@ -119,8 +119,8 @@ int xmos_dev_write(int xmos_d, unsigned char order, unsigned char *data, int dat
 
 void xmos_dev_write_group(int xmos_d, unsigned char *data, int data_len)
 {
-    // timer stop
-    ualarm(0, 0);
+//    // timer stop
+//    ualarm(0, 0);
     xmos_d_for_group = xmos_d;
     int i;
     for (i = 0; i < data_len; i ++) {
@@ -130,11 +130,11 @@ void xmos_dev_write_group(int xmos_d, unsigned char *data, int data_len)
             xmos_write_data_group_index = 0;
         }
     }
-    if (xmos_write_data_group_index > 0) {
-        // timer start
-        ualarm(5000, 0);
-        signal(SIGALRM, xmos_dev_write_group_no_wait);
-    }
+//    if (xmos_write_data_group_index > 0) {
+//        // timer start
+//        ualarm(5000, 0);
+//        signal(SIGALRM, xmos_dev_write_group_no_wait);
+//    }
 }
 
 void xmos_dev_write_group_no_wait()
@@ -166,8 +166,18 @@ int xmos_dev_led_flush_frame(int xmos_d,
 	if (data_len == FRAME_LEN) {
 		ret = xmos_dev_write(xmos_d, ORDER_LED_FLUSH_FRAME, data, (FRAME_LEN - BACK_FRAME_LEN));
 		data += (FRAME_LEN - BACK_FRAME_LEN);
+		unsigned char back_tmp_data[BACK_FRAME_LEN + 18];
+		int i;
+		for (i = 0; i < BACK_FRAME_LEN + 18; i ++) {
+		    if (i < 18) back_tmp_data[i] = 0xff;
+		    else {
+		        if (i % 3 == 0) back_tmp_data[i] = data[i - 18 + 2];
+		        if (i % 3 == 1) back_tmp_data[i] = data[i - 18];
+		        if (i % 3 == 2) back_tmp_data[i] = data[i - 18 - 2];
+		    }
+		}
 #ifdef ANDROID
-		ret = write(back_led_fd, data, BACK_FRAME_LEN);
+		ret = write(back_led_fd, back_tmp_data, BACK_FRAME_LEN + 18);
 #endif
 		if (ret < 0) {
 			perror("back led write error");

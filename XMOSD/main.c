@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <dirent.h>
 #ifdef ANDROID
 #include <cutils/sockets.h>
 #include <cutils/log.h>
@@ -20,6 +21,17 @@
 #include "xmosd.h"
 
 int running = 1;
+
+void find_bcd_device() {
+	DIR *dirp;
+	struct dirent *dp;
+	dirp = opendir("."); //打开目录指针
+	while ((dp = readdir(dirp)) != NULL) { //通过目录指针读目录
+		printf("%s\n", dp->d_name );
+	}
+	(void) closedir(dirp); //关闭目录
+
+}
 
 extern struct sock_func *sock_funcs;
 extern struct hub_func hub_func;
@@ -185,6 +197,8 @@ int event_handler(struct sock_func *sfs)
 #ifdef ANDROID
 int main(void)
 {
+	find_bcd_device();
+
 	struct sock_func *sf;
 
 	ALOGI("Xmosd started");
@@ -247,6 +261,8 @@ int main(void)
 
 	signal(SIGINT, cs);  //ctrl+c
 	signal(SIGTERM, cs);  //kill
+
+	find_bcd_device();
 
 	char spath[1024] = {0};
 	struct sock_func *sf;
