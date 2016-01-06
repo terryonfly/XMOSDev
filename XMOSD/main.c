@@ -76,7 +76,7 @@ void find_bcd_device() {
 			break;
 		}
 	}
-	printf("%d\n", bcdDevice);
+	printf("bcdDevice = %d\n", bcdDevice);
 	closedir(dirp); //关闭目录
 }
 

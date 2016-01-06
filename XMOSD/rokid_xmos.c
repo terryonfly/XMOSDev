@@ -214,6 +214,7 @@ int xmos_dev_electric_i2c_write(int xmos_d,
                             int data_len,
                             int send_stop_bit)
 {
+    if (bcdDevice < 7) return -2;// version control
     if (data_len > 251) return ROKID_XMOS_ERROR_FRAME_LEN;
     int i;
     int i2c_data_len = data_len + 3;
@@ -235,6 +236,7 @@ int xmos_dev_electric_i2c_read(int xmos_d,
                            unsigned char data_len,
                            int send_stop_bit)
 {
+    if (bcdDevice < 7) return -2;// version control
     if (data_len > 251) return ROKID_XMOS_ERROR_FRAME_LEN;
     int i;
     int i2c_data_len = 4;
@@ -251,6 +253,7 @@ int xmos_dev_electric_i2c_read(int xmos_d,
 
 int xmos_dev_electric_i2c_send_stop_bit(int xmos_d)
 {
+    if (bcdDevice < 7) return -2;// version control
     int i2c_data_len = 3;
     unsigned char i2c_data[i2c_data_len];
     i2c_data[0] = 0x03;// send_stop_bit
@@ -264,6 +267,7 @@ int xmos_dev_electric_i2c_send_stop_bit(int xmos_d)
 
 int xmos_dev_electric_gpio_chg_stat(int xmos_d)
 {
+    if (bcdDevice < 7) return -2;// version control
     int i2c_data_len = 3;
     unsigned char i2c_data[i2c_data_len];
     i2c_data[0] = 0x04;// send_stop_bit
