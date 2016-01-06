@@ -49,21 +49,25 @@ void find_bcd_device() {
 		while ((sub_dp = readdir(sub_dirp)) != NULL) {
 			if (strcmp(sub_dp->d_name,"idProduct") == 0) {
 				int file = open(join_char(dir_path, sub_dp->d_name), O_RDONLY);
-				char spid[64];
-				read(file, spid, 64);
-				printf("p===%s\n", spid);
+				char spid[5];
+				read(file, spid, 4);
+				spid[5] = 0x00;
 				if (strcmp(spid,"20b1") == 0) {
+					printf("p===%s\n", spid);
 					pid_ok = 1;
 				}
+				close(file);
 			}
 			if (strcmp(sub_dp->d_name,"idVendor") == 0) {
 				int file = open(join_char(dir_path, sub_dp->d_name), O_RDONLY);
-				char svid[64];
-				read(file, svid, 64);
-				printf("v===%s\n", svid);
+				char svid[5];
+				read(file, svid, 4);
+				svid[5] = 0x00;
 				if (strcmp(svid,"0008") == 0) {
+					printf("v===%s\n", svid);
 					vid_ok = 1;
 				}
+				close(file);
 			}
 		}
 		if (pid_ok && vid_ok) {
