@@ -42,8 +42,11 @@ void find_bcd_device() {
 		if (dp->d_type != DT_DIR) continue;
 		struct dirent *sub_dp;
 		DIR *sub_dirp;
-		sub_dirp = opendir(join_char(join_char("/sys/bus/usb/devices/", dp->d_name), "/"));
+		char *dir_path = join_char(join_char("/sys/bus/usb/devices/", dp->d_name), "/");
+		printf("--> %s\n", dir_path);
+		sub_dirp = opendir(dir_path);
 		while ((sub_dp = readdir(sub_dirp)) != NULL) {
+			printf("file--------->%s\n", sub_dp->d_name);
 			if (strcmp(sub_dp->d_name,"idProduct") == 0)
 				printf("%s\n", sub_dp->d_name);
 			if (strcmp(sub_dp->d_name,"idVendor") == 0)
