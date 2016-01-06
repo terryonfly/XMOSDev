@@ -25,9 +25,15 @@ int running = 1;
 void find_bcd_device() {
 	DIR *dirp;
 	struct dirent *dp;
-	dirp = opendir("."); //打开目录指针
+	dirp = opendir("/sys/bus/usb/devices/"); //打开目录指针
 	while ((dp = readdir(dirp)) != NULL) { //通过目录指针读目录
-		printf("%s\n", dp->d_name );
+		struct dirent *sub_dp;
+		while ((sub_dp = readdir(dp)) != NULL) {
+			if (strcmp(sub_dp->d_name,"idProduct"))
+				printf("%s\n", sub_dp->d_name);
+			if (strcmp(sub_dp->d_name,"idVendor"))
+				printf("%s\n", sub_dp->d_name);
+		}
 	}
 	(void) closedir(dirp); //关闭目录
 
