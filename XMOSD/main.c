@@ -52,8 +52,7 @@ void find_bcd_device() {
 				char spid[5];
 				read(file, spid, 4);
 				spid[5] = 0x00;
-				if (strcmp(spid,"20b1") == 0) {
-					printf("p===%s\n", spid);
+				if (strcmp(spid,"0008") == 0) {
 					pid_ok = 1;
 				}
 				close(file);
@@ -63,8 +62,7 @@ void find_bcd_device() {
 				char svid[5];
 				read(file, svid, 4);
 				svid[5] = 0x00;
-				if (strcmp(svid,"0008") == 0) {
-					printf("v===%s\n", svid);
+				if (strcmp(svid,"20b1") == 0) {
 					vid_ok = 1;
 				}
 				close(file);
