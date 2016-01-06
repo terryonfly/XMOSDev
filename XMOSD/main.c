@@ -22,13 +22,28 @@
 
 int running = 1;
 
+char* join_char(char *s1, char *s2)
+{
+	char *result = malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
+	//in real code you would check for errors in malloc here
+	if (result == NULL) exit (1);
+
+	strcpy(result, s1);
+	strcat(result, s2);
+
+	return result;
+}
+
 void find_bcd_device() {
 	DIR *dirp;
 	struct dirent *dp;
 	dirp = opendir("/sys/bus/usb/devices/"); //打开目录指针
 	while ((dp = readdir(dirp)) != NULL) { //通过目录指针读目录
+		if (dp->d_type != DT_DIR) continue;
 		struct dirent *sub_dp;
-		while ((sub_dp = readdir(dp)) != NULL) {
+		DIR *sub_dirp;
+		sub_dirp = opendir(join_char("/sys/bus/usb/devices/", dp->d_name));
+		while ((sub_dp = readdir(sub_dirp)) != NULL) {
 			if (strcmp(sub_dp->d_name,"idProduct"))
 				printf("%s\n", sub_dp->d_name);
 			if (strcmp(sub_dp->d_name,"idVendor"))
