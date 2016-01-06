@@ -39,11 +39,11 @@ void find_bcd_device() {
 	struct dirent *dp;
 	dirp = opendir("/sys/bus/usb/devices/"); //打开目录指针
 	while ((dp = readdir(dirp)) != NULL) { //通过目录指针读目录
-		if (dp->d_type != DT_DIR) continue;
+//		if (dp->d_type != DT_DIR) continue;
 		struct dirent *sub_dp;
 		DIR *sub_dirp;
 		char *dir_path = join_char(join_char("/sys/bus/usb/devices/", dp->d_name), "/");
-		printf("--> %s\n", dir_path);
+		printf("--> %s [%d]\n", dir_path, dp->d_type);
 		sub_dirp = opendir(dir_path);
 		while ((sub_dp = readdir(sub_dirp)) != NULL) {
 			printf("file--------->%s\n", sub_dp->d_name);
