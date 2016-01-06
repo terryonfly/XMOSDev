@@ -19,6 +19,7 @@
 #endif
 
 #include "xmosd.h"
+#include "rokid_xmos.h"
 
 int running = 1;
 
@@ -67,10 +68,15 @@ void find_bcd_device() {
 			}
 		}
 		if (pid_ok && vid_ok) {
-			printf("--------->%s<---------\n", dp->d_name);
+			int file = open(join_char(dir_path, "bcdDevice"), O_RDONLY);
+			char bcdD[5];
+			read(file, bcdD, 4);
+			bcdDevice = atoi(bcdD);
+			close(file);
 			break;
 		}
 	}
+	printf("%d\n", bcdDevice);
 	closedir(dirp); //关闭目录
 }
 

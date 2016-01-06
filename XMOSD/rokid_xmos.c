@@ -15,6 +15,8 @@
 #include "uart.h"
 #include "rokid_xmos.h"
 
+int bcdDevice = 0;
+
 #ifdef ANDROID
 #define SERIAL_DEV "/dev/tty.usbmodem14235"
 #else

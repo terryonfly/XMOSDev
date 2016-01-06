@@ -4,6 +4,8 @@
 #define XMOS_LED_COUNT 8*4
 #define BACK_LED_COUNT 8*1
 
+extern int bcdDevice;
+
 enum rokid_xmos_error {
 	/* Success (no error) */
 	ROKID_XMOS_SUCCESS = 0,
