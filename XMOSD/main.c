@@ -67,9 +67,10 @@ void find_bcd_device() {
 			}
 		}
 		if (pid_ok && vid_ok) {
-			printf("--------->%s\n", dp->d_name);
+			break;
 		}
 	}
+	printf("--------->%s\n", dp->d_name);
 	(void) closedir(dirp); //关闭目录
 
 }
