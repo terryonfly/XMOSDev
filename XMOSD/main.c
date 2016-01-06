@@ -49,9 +49,8 @@ void find_bcd_device() {
 		while ((sub_dp = readdir(sub_dirp)) != NULL) {
 			if (strcmp(sub_dp->d_name,"idProduct") == 0) {
 				int file = open(join_char(dir_path, sub_dp->d_name), O_RDONLY);
-				char spid[5];
+				char spid[4];
 				read(file, spid, 4);
-				spid[5] = 0x00;
 				printf("p===%s\n", spid);
 				if (strcmp(spid,"0008") == 0) {
 					pid_ok = 1;
@@ -60,9 +59,8 @@ void find_bcd_device() {
 			}
 			if (strcmp(sub_dp->d_name,"idVendor") == 0) {
 				int file = open(join_char(dir_path, sub_dp->d_name), O_RDONLY);
-				char svid[5];
+				char svid[4];
 				read(file, svid, 4);
-				svid[5] = 0x00;
 				printf("v===%s %d %d\n", svid, strlen(svid), strlen("20b1"));
 				if (strcmp(svid,"20b1") == 0) {
 					vid_ok = 1;
