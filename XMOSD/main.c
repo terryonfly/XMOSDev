@@ -63,7 +63,7 @@ void find_bcd_device() {
 				char svid[5];
 				read(file, svid, 4);
 				svid[5] = 0x00;
-				printf("v===%s\n", svid);
+				printf("v===%s %d %d\n", svid, strlen(svid), strlen("20b1"));
 				if (strcmp(svid,"20b1") == 0) {
 					vid_ok = 1;
 				}
