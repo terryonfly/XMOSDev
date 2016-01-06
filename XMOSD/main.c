@@ -39,18 +39,33 @@ void find_bcd_device() {
 	struct dirent *dp;
 	dirp = opendir("/sys/bus/usb/devices/"); //打开目录指针
 	while ((dp = readdir(dirp)) != NULL) { //通过目录指针读目录
-//		if (dp->d_type != DT_DIR) continue;
+		if (dp->d_type != DT_LNK) continue;
 		struct dirent *sub_dp;
 		DIR *sub_dirp;
 		char *dir_path = join_char(join_char("/sys/bus/usb/devices/", dp->d_name), "/");
-		printf("--> %s [%d]\n", dir_path, dp->d_type);
 		sub_dirp = opendir(dir_path);
+		int pid_ok = 0;
+		int vid_ok = 0;
 		while ((sub_dp = readdir(sub_dirp)) != NULL) {
-			printf("file--------->%s\n", sub_dp->d_name);
-			if (strcmp(sub_dp->d_name,"idProduct") == 0)
-				printf("%s\n", sub_dp->d_name);
-			if (strcmp(sub_dp->d_name,"idVendor") == 0)
-				printf("%s\n", sub_dp->d_name);
+			if (strcmp(sub_dp->d_name,"idProduct") == 0) {
+				int file = open(join_char(dir_path, sub_dp->d_name), O_RDONLY);
+				char spid[64];
+				read(file, spid, 64);
+				if (strcmp(spid,"20b1") == 0) {
+					pid_ok = 1;
+				}
+			}
+			if (strcmp(sub_dp->d_name,"idVendor") == 0) {
+				int file = open(join_char(dir_path, sub_dp->d_name), O_RDONLY);
+				char svid[64];
+				read(file, svid, 64);
+				if (strcmp(svid,"0008") == 0) {
+					vid_ok = 1;
+				}
+			}
+		}
+		if (pid_ok && vid_ok) {
+			printf("--------->%s\n", dp->d_name);
 		}
 	}
 	(void) closedir(dirp); //关闭目录
