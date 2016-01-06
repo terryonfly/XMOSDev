@@ -44,9 +44,9 @@ void find_bcd_device() {
 		DIR *sub_dirp;
 		sub_dirp = opendir(join_char("/sys/bus/usb/devices/", dp->d_name));
 		while ((sub_dp = readdir(sub_dirp)) != NULL) {
-			if (strcmp(sub_dp->d_name,"idProduct"))
+			if (strcmp(sub_dp->d_name,"idProduct") == 0)
 				printf("%s\n", sub_dp->d_name);
-			if (strcmp(sub_dp->d_name,"idVendor"))
+			if (strcmp(sub_dp->d_name,"idVendor") == 0)
 				printf("%s\n", sub_dp->d_name);
 		}
 	}
