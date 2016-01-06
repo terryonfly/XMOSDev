@@ -37,8 +37,8 @@ char* join_char(char *s1, char *s2)
 void find_bcd_device() {
 	DIR *dirp;
 	struct dirent *dp;
-	dirp = opendir("/sys/bus/usb/devices/"); //打开目录指针
-	while ((dp = readdir(dirp)) != NULL) { //通过目录指针读目录
+	dirp = opendir("/sys/bus/usb/devices/");
+	while ((dp = readdir(dirp)) != NULL) {
 		if (dp->d_type != DT_LNK) continue;
 		struct dirent *sub_dp;
 		DIR *sub_dirp;
@@ -51,6 +51,7 @@ void find_bcd_device() {
 				int file = open(join_char(dir_path, sub_dp->d_name), O_RDONLY);
 				char spid[64];
 				read(file, spid, 64);
+				printf("p===%s\n", spid);
 				if (strcmp(spid,"20b1") == 0) {
 					pid_ok = 1;
 				}
@@ -59,6 +60,7 @@ void find_bcd_device() {
 				int file = open(join_char(dir_path, sub_dp->d_name), O_RDONLY);
 				char svid[64];
 				read(file, svid, 64);
+				printf("v===%s\n", svid);
 				if (strcmp(svid,"0008") == 0) {
 					vid_ok = 1;
 				}
