@@ -23,8 +23,8 @@
 
 #define offsetof(TYPE, MEMBER) ((int)&((TYPE *)0)->MEMBER)
 
-//char *sock_addr = "/tmp/xmosd_ammeter";
-char *sock_addr = "/dev/socket/xmosd_ammeter";
+char *sock_addr = "/tmp/xmosd_ammeter";
+//char *sock_addr = "/dev/socket/xmosd_ammeter";
 
 unsigned char fuel_i2c_data[512];
 
@@ -118,7 +118,7 @@ int fuel_dev_i2c_write(struct fuel_dev *fuel_d,
     actual = write(fuel_d->fd_fuel, fuel_d->frame_data, frame_data_len);
     if (actual != frame_data_len) return -1;
 
-    int retry_times = 10;
+    int retry_times = 50;
     do {
         actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
         if (actual == -1) {
@@ -190,7 +190,7 @@ int fuel_dev_i2c_read(struct fuel_dev *fuel_d,
     actual = write(fuel_d->fd_fuel, fuel_d->frame_data, frame_data_len);
     if (actual != frame_data_len) return -1;
 
-    int retry_times = 10;
+    int retry_times = 500;
     do {
         actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
         if (actual == -1) {
@@ -259,7 +259,7 @@ int fuel_dev_i2c_send_stop_bit(struct fuel_dev *fuel_d)
     actual = write(fuel_d->fd_fuel, fuel_d->frame_data, frame_data_len);
     if (actual != frame_data_len) return -1;
 
-    int retry_times = 10;
+    int retry_times = 500;
     do {
         actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
         if (actual == -1) {
@@ -359,7 +359,8 @@ int fuel_dev_gpio_chg_stat(struct fuel_dev *fuel_d, int *gpio_val)
     actual = write(fuel_d->fd_fuel, fuel_d->frame_data, frame_data_len);
     if (actual != frame_data_len) return -1;
 
-    int retry_times = 10;
+	usleep(500 * 1000);
+    int retry_times = 1;
     do {
         actual = read(fuel_d->fd_fuel, fuel_i2c_data, 512);
         if (actual == -1) {
@@ -388,6 +389,6 @@ int fuel_dev_gpio_chg_stat(struct fuel_dev *fuel_d, int *gpio_val)
     if (fuel_i2c_data[5] != 0x01) return -1;// ack or nack
     if (fuel_i2c_data[6] != 0x80) return -1;
     *gpio_val = fuel_i2c_data[7];
-    printf("got chg_stat = %d\n", gpio_val);
+    printf("got chg_stat = %d\n", *gpio_val);
     return 0;
 }

@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
         int ret;
         ret = led_dev_flush_frame(led_dd, one_frame, LED_COUNT * 3);
-        usleep(1000 * 1000);
+	usleep(15 * 1000);
     }
 
     return 0;

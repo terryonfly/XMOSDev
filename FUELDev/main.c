@@ -14,7 +14,7 @@ int running = 1;
 void test_i2c_read_reg(struct fuel_dev *fuel_d) {
     int r;
     char test_dev_addr = 0x55;
-    char test_reg_addr = 0x10;
+    char test_reg_addr = 0x0E;
     unsigned char test_val;
     r = fuel_dev_i2c_read_reg(fuel_d, test_dev_addr, test_reg_addr, &test_val);
 }
@@ -68,33 +68,39 @@ int main(int argc, char **argv)
 
     int k = 0;
     while (running) {
+	k = 0;
         switch (k) {
             case 0:
             {
                 printf("func -> test_i2c_read_reg\n");
                 test_i2c_read_reg(fuel_dd);
             }
+		break;
             case 1:
             {
                 printf("func -> test_i2c_write_reg\n");
                 test_i2c_write_reg(fuel_dd);
             }
+		break;
             case 2:
             {
                 printf("func -> test_i2c_read\n");
                 test_i2c_read(fuel_dd);
             }
+		break;
             case 3:
             {
                 printf("func -> test_i2c_write\n");
                 test_i2c_write(fuel_dd);
             }
+		break;
         }
         usleep(1000 * 1000);
 
         int CHG_STAT;
-        fuel_dev_gpio_chg_stat(fuel_dd, &CHG_STAT);
-
+        int ret = fuel_dev_gpio_chg_stat(fuel_dd, &CHG_STAT);
+	
+	printf("ret = %d, CHG_STAT = %d\n", ret, CHG_STAT);
         k ++;
         if (k >= 4) k = 0;
     }
