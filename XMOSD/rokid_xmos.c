@@ -237,7 +237,6 @@ int xmos_dev_electric_gpio_chg_stat(int xmos_d)
 
 int fuel_feedback(int fd, unsigned char *data, int data_len)
 {
-    return 0;
     printf("kb = %d\n", data_len);
     int xmos_data_len = HEADER_LEN + data_len * 2 + FOOTER_LEN;
     int index = 0;
