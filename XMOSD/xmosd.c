@@ -40,6 +40,12 @@ int preprocess(void)
 
 void ammeter_command_decode(int hubfd, unsigned char *buf, int len)
 {
+    if (bcdDevice < 7) {// version control
+        char empty[1];
+        empty[0] = 0;
+        fuel_feedback(fuel_fd, empty, 1);
+        return;
+    }
     printf("one command\n");
     if (len < 3) return;
     char dev_addr = buf[1];
@@ -102,7 +108,7 @@ int process_ammeter(int fd, int hubfd)
     char buf[64*1024];
     int num;
 
-//    printf("%s\n", __func__);
+    printf("%s\n", __func__);
 
     memset(buf, 0, sizeof(buf));
 
@@ -157,7 +163,7 @@ int process_amp(int fd, int hubfd)
     char buf[64*1024];
     int num;
 
-//    printf("%s\n", __func__);
+    printf("%s\n", __func__);
 
     memset(buf, 0, sizeof(buf));
 
@@ -211,7 +217,7 @@ int process_led(int fd, int hubfd)
     char buf[64*1024];
     int num;
 
-//    printf("%s\n", __func__);
+    printf("%s\n", __func__);
 
     memset(buf, 0, sizeof(buf));
 
