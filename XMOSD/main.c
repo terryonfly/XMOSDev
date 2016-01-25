@@ -184,6 +184,7 @@ int event_handler(struct sock_func *sfs)
 
 				epoll_ctl(efd, EPOLL_CTL_DEL, events[n].data.fd, &ev);
 				close(lc->connsfd);
+				printf("colse -> %d\n", lc->connsfd);
 
 				lc = (struct listen_conns *)&lcs;
 				while (lc->connsfd != events[n].data.fd)
