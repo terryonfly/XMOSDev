@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 
     int k = 0;
     while (running) {
-	k = 0;
+	    k = 0;
         switch (k) {
             case 0:
             {
@@ -100,10 +100,11 @@ int main(int argc, char **argv)
         int CHG_STAT;
         int ret = fuel_dev_gpio_chg_stat(fuel_dd, &CHG_STAT);
 	
-	printf("ret = %d, CHG_STAT = %d\n", ret, CHG_STAT);
+	    printf("ret = %d, CHG_STAT = %d\n", ret, CHG_STAT);
         k ++;
         if (k >= 4) k = 0;
     }
+    fuel_dev_close(fuel_dd);
 
     return 0;
 }
