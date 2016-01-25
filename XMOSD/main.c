@@ -77,7 +77,7 @@ void find_bcd_device() {
 		}
 	}
 	printf("bcdDevice = %d\n", bcdDevice);
-	closedir(dirp); //关闭目录
+	closedir(dirp);
 }
 
 extern struct sock_func *sock_funcs;
